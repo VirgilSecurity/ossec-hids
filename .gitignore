@@ -55,6 +55,9 @@ src/verify-agent-conf
 .project
 .settings/
 
+# Netbeans files
+nbproject/
+
 # temporary vim files
 *.swp
 *.swo
