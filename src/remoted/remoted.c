@@ -71,6 +71,11 @@ void HandleRemote(int position, int uid)
         HandleSecure();
     }
 
+    else if (logr.conn[position] == NOISES_CONN)
+    {
+        HandleNoiseTCP();
+    }
+
     else if (logr.proto[position] == IPPROTO_TCP)
     {
         HandleSyslogTCP();

@@ -12,6 +12,7 @@
 
 #define SYSLOG_CONN 1
 #define SECURE_CONN 2
+#define NOISES_CONN 3
 
 #include "shared.h"
 
