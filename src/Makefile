@@ -5,9 +5,11 @@ uname_S := $(shell sh -c 'uname -s 2>/dev/null || echo not')
 EXTERNAL_JSON=external/cJSON/
 EXTERNAL_LUA=external/lua/
 EXTERNAL_ZLIB=external/zlib-1.2.11/
+EXTERNAL_NOISESOCKET=external/noisesocket/
 ZLIB_SYSTEM?=no
 LUA_PLAT=posix
 LUA_ENABLE?=yes
+NOISESOCKET_ENABLE?=yes
 MAXAGENTS?=2048
 REUSE_ID?=no
 # XXX Becareful NO EXTRA Spaces here
@@ -525,6 +527,7 @@ help: failtarget
 	@echo
 	@echo "External source options: "
 	@echo "   make LUA_ENABLE=no    Disable LUA build"
+	@echo "   make NOISESOCKET_ENABLE=no    Disable Noisesocket build"
 	@echo "   make ZLIB_SYSTEM=yes  Use zlib sources from system"
 	@echo
 	@echo "Examples: Client with debugging enabled"
@@ -556,6 +559,8 @@ settings:
 	@echo "Lua settings:"
 	@echo "    LUA_PLAT:         ${LUA_PLAT}"
 	@echo "    LUA_ENABLE:       ${LUA_ENABLE}"
+	@echo "Noisesocket settings:"
+	@echo "    NOISESOCKET_ENABLE:       ${NOISESOCKET_ENABLE}"
 	@echo "USE settings:"
 	@echo "    USE_ZEROMQ:       ${USE_ZEROMQ}"
 	@echo "    USE_GEOIP:        ${USE_GEOIP}"
@@ -656,12 +661,17 @@ winagent:
 #### External ######
 ####################
 
-.PHONY: external lua
-external: libcJSON.a ${EXTERNAL_ZLIB}libz.a lua
+.PHONY: external lua noisesocket
+external: libcJSON.a ${EXTERNAL_ZLIB}libz.a lua noisesocket
 
 lua:
 ifeq (${LUA_ENABLE},yes)
 	cd ${EXTERNAL_LUA} && ${MAKE} ${LUA_PLAT}
+endif
+
+noisesocket:
+ifeq (${NOISESOCKET_ENABLE},yes)
+	${EXTERNAL_NOISESOCKET}/scripts/build-debug.sh
 endif
 
 ${EXTERNAL_ZLIB}libz.a:
@@ -1302,6 +1312,7 @@ clean-external:
 	rm -f ${cjson_o} libcJSON.a
 	cd ${EXTERNAL_ZLIB} && ${MAKE} -f Makefile.in distclean
 	cd ${EXTERNAL_LUA} && ${MAKE} clean
+	${EXTERNAL_NOISESOCKET}/scripts/clean.sh
 
 
 clean-internals:
