@@ -1,0 +1,3 @@
+[submodule "src/external/noisesocket"]
+	path = src/external/noisesocket
+	url = https://github.com/VirgilSecurity/noisesocket-ossec.git
