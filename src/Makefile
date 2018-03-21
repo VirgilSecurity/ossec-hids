@@ -319,6 +319,14 @@ ifneq (,$(filter ${USE_OPENSSL},yes y Y 1))
 	endif
 endif
 
+# Noisesocket ###########
+ifeq (${NOISESOCKET_ENABLE},yes)
+	DEFINES+=-DNOISESOCKET_ENABLED
+	CFLAGS+=-I${EXTERNAL_NOISESOCKET}/include
+	OSSEC_LDFLAGS+=-L${EXTERNAL_NOISESOCKET}_build
+	OSSEC_LDFLAGS+=-lvirgil-noisesocket
+endif # NOISESOCKET_ENABLE
+
 ####################
 #### Target ########
 ####################
@@ -1312,7 +1320,7 @@ clean-external:
 	rm -f ${cjson_o} libcJSON.a
 	cd ${EXTERNAL_ZLIB} && ${MAKE} -f Makefile.in distclean
 	cd ${EXTERNAL_LUA} && ${MAKE} clean
-	${EXTERNAL_NOISESOCKET}/scripts/clean.sh
+#	${EXTERNAL_NOISESOCKET}/scripts/clean.sh?
 
 
 clean-internals:

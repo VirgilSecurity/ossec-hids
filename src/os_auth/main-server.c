@@ -22,13 +22,13 @@
  *
  */
 
-#ifndef LIBOPENSSL_ENABLED
+#if !defined(LIBOPENSSL_ENABLED) && !defined(NOISESOCKET_ENABLED)
 
 #include <stdlib.h>
 #include <stdio.h>
 int main()
 {
-    printf("ERROR: Not compiled. Missing OpenSSL support.\n");
+    printf("ERROR: Not compiled. Missing OpenSSL and Noisesocket support.\n");
     exit(0);
 }
 
@@ -41,6 +41,13 @@ int main()
 /* TODO: Pulled this value out of the sky, may or may not be sane */
 #define POOL_SIZE 512
 
+/* Return codes */
+#define RES_OK                      (0)
+#define RES_REGISTRATION_ERROR      (-1)
+#define RES_PASSWORD_ERROR          (-2)
+#define RES_PARSE_ERROR             (-3)
+#define RES_WRITE_ERROR             (-4)
+
 /* Prototypes */
 static void help_authd(void) __attribute((noreturn));
 static int ssl_error(const SSL *ssl, int ret);
@@ -51,7 +58,7 @@ static void clean_exit(SSL_CTX *ctx, int sock) __attribute__((noreturn));
 static void help_authd()
 {
     print_header();
-    print_out("  %s: -[Vhdti] [-g group] [-D dir] [-p port] [-c ciphers] [-v path] [-x path] [-k path]", ARGV0);
+    print_out("  %s: -[VhdtiN] [-g group] [-D dir] [-p port] [-c ciphers] [-v path] [-x path] [-k path]", ARGV0);
     print_out("    -V          Version and license message");
     print_out("    -h          This help message");
     print_out("    -d          Execute in debug mode. This parameter");
@@ -59,6 +66,7 @@ static void help_authd()
     print_out("                to increase the debug level.");
     print_out("    -t          Test configuration");
     print_out("    -i          Use client's source IP address");
+    print_out("    -N          Use Noisesocket");
     print_out("    -g <group>  Group to run as (default: %s)", GROUPGLOBAL);
     print_out("    -D <dir>    Directory to chroot into (default: %s)", DEFAULTDIR);
     print_out("    -p <port>   Manager port (default: %s)", DEFAULT_PORT);
@@ -135,6 +143,7 @@ static int ssl_error(const SSL *ssl, int ret)
 
 static void clean_exit(SSL_CTX *ctx, int sock)
 {
+    sleep(1);
     SSL_CTX_free(ctx);
     close(sock);
     exit(0);
@@ -143,7 +152,124 @@ static void clean_exit(SSL_CTX *ctx, int sock)
 /* Exit handler */
 static void cleanup();
 
+static int write_agent(int use_noisesocket, void *ctx, const void *buf, int num)
+{
+    if (!use_noisesocket) {
+        return SSL_write((SSL*)ctx, buf, num);
+    } else {
 
+    }
+
+    return RES_WRITE_ERROR;
+}
+
+static int process_agent_request(char *request,
+        const char *authpass, int use_ip_address, const char *srcip,
+        int use_noisesocket, void *write_ctx)
+{
+    int parseok = 0;
+    int ret = 0;
+    char *agentname = NULL;
+
+    /* Checking for shared password authentication. */
+    if (authpass) {
+        /* Format is pretty simple: OSSEC PASS: PASS WHATEVERACTION */
+        if (strncmp(request, "OSSEC PASS: ", 12) == 0) {
+            request = request + 12;
+
+            if (strlen(request) > strlen(authpass) && strncmp(request, authpass, strlen(authpass)) == 0) {
+                request += strlen(authpass);
+
+                if (*request == ' ') {
+                    request++;
+                    parseok = 1;
+                }
+            }
+        }
+        if (parseok == 0) {
+            merror("%s: ERROR: Invalid password provided by %s. Closing connection.", ARGV0, srcip);
+            return RES_PARSE_ERROR;
+        }
+    }
+
+    /* Checking for action A (add agent) */
+    parseok = 0;
+    if (strncmp(request, "OSSEC A:'", 9) == 0) {
+        agentname = request + 9;
+        request += 9;
+        while (*request != '\0') {
+            if (*request == '\'') {
+                *request = '\0';
+                verbose("%s: INFO: Received request for a new agent (%s) from: %s", ARGV0, agentname, srcip);
+                parseok = 1;
+                break;
+            }
+            request++;
+        }
+    }
+    if (parseok == 0) {
+        merror("%s: ERROR: Invalid request for new agent from: %s", ARGV0, srcip);
+    } else {
+        int acount = 2;
+        char fname[2048 + 1];
+        char response[2048 + 1];
+        char *finalkey = NULL;
+        response[2048] = '\0';
+        fname[2048] = '\0';
+        if (!OS_IsValidName(agentname)) {
+            merror("%s: ERROR: Invalid agent name: %s from %s", ARGV0, agentname, srcip);
+            snprintf(response, 2048, "ERROR: Invalid agent name: %s\n\n", agentname);
+            write_agent(use_noisesocket, write_ctx, response, strlen(response));
+            snprintf(response, 2048, "ERROR: Unable to add agent.\n\n");
+            write_agent(use_noisesocket, write_ctx, response, strlen(response));
+            return RES_REGISTRATION_ERROR;
+        }
+
+        /* Check for duplicate names */
+        strncpy(fname, agentname, 2048);
+        while (NameExist(fname)) {
+            snprintf(fname, 2048, "%s%d", agentname, acount);
+            acount++;
+            if (acount > 256) {
+                merror("%s: ERROR: Invalid agent name %s (duplicated)", ARGV0, agentname);
+                snprintf(response, 2048, "ERROR: Invalid agent name: %s\n\n", agentname);
+                write_agent(use_noisesocket, write_ctx, response, strlen(response));
+                snprintf(response, 2048, "ERROR: Unable to add agent.\n\n");
+                write_agent(use_noisesocket, write_ctx, response, strlen(response));
+                return RES_REGISTRATION_ERROR;
+            }
+        }
+        agentname = fname;
+
+        /* Add the new agent */
+        if (use_ip_address) {
+            finalkey = OS_AddNewAgent(agentname, srcip, NULL);
+        } else {
+            finalkey = OS_AddNewAgent(agentname, NULL, NULL);
+        }
+        if (!finalkey) {
+            merror("%s: ERROR: Unable to add agent: %s (internal error)", ARGV0, agentname);
+            snprintf(response, 2048, "ERROR: Internal manager error adding agent: %s\n\n", agentname);
+            write_agent(use_noisesocket, write_ctx, response, strlen(response));
+            snprintf(response, 2048, "ERROR: Unable to add agent.\n\n");
+            write_agent(use_noisesocket, write_ctx, response, strlen(response));
+            return RES_REGISTRATION_ERROR;
+        }
+
+        snprintf(response, 2048, "OSSEC K:'%s'\n\n", finalkey);
+        verbose("%s: INFO: Agent key generated for %s (requested by %s)", ARGV0, agentname, srcip);
+        ret = write_agent(use_noisesocket, write_ctx, response, strlen(response));
+        if (ret < 0) {
+            merror("%s: ERROR: SSL write error (%d)", ARGV0, ret);
+            merror("%s: ERROR: Agent key not saved for %s", ARGV0, agentname);
+            ERR_print_errors_fp(stderr);
+        } else {
+            verbose("%s: INFO: Agent key created for %s (requested by %s)", ARGV0, agentname, srcip);
+        }
+    }
+
+    return RES_OK;
+}
 
 int main(int argc, char **argv)
 {
@@ -152,7 +278,7 @@ int main(int argc, char **argv)
     /* Bucket to keep pids in */
     int process_pool[POOL_SIZE];
     /* Count of pids we are wait()ing on */
-    int c = 0, test_config = 0, use_ip_address = 0, pid = 0, status, i = 0, active_processes = 0;
+    int c = 0, test_config = 0, use_ip_address = 0, pid = 0, status, i = 0, active_processes = 0, use_noisesocket = 0;
     int use_pass = 1;
     gid_t gid;
     int client_sock = 0, sock = 0, portnum, ret = 0;
@@ -180,7 +306,7 @@ int main(int argc, char **argv)
     /* Set the name */
     OS_SetName(ARGV0);
 
-    while ((c = getopt(argc, argv, "Vdhtig:D:m:p:c:v:x:k:n")) != -1) {
+    while ((c = getopt(argc, argv, "VdhtigN:D:m:p:c:v:x:k:n")) != -1) {
         switch (c) {
             case 'V':
                 print_version();
@@ -193,6 +319,9 @@ int main(int argc, char **argv)
                 break;
             case 'i':
                 use_ip_address = 1;
+                break;
+            case 'N':
+                use_noisesocket = 1;
                 break;
             case 'g':
                 if (!optarg) {
@@ -260,7 +389,7 @@ int main(int argc, char **argv)
     if (gid == (gid_t) - 1) {
         ErrorExit(USER_ERROR, ARGV0, "", group);
     }
-    
+
     /* Create PID files */
     if (CreatePID(ARGV0, getpid()) < 0) {
 	ErrorExit(PID_ERROR, ARGV0);
@@ -402,7 +531,6 @@ int main(int argc, char **argv)
                 }
             } else {
                 satop((struct sockaddr *) &_nc, srcip, IPSIZE);
-                char *agentname = NULL;
                 ssl = SSL_new(ctx);
                 SSL_set_fd(ssl, client_sock);
 
@@ -426,110 +554,9 @@ int main(int argc, char **argv)
 
                 } while (ret <= 0);
 
-                int parseok = 0;
                 char *tmpstr = buf;
 
-                /* Checking for shared password authentication. */
-                if(authpass) {
-                    /* Format is pretty simple: OSSEC PASS: PASS WHATEVERACTION */
-                    if (strncmp(tmpstr, "OSSEC PASS: ", 12) == 0) {
-                        tmpstr = tmpstr + 12;
-
-                        if (strlen(tmpstr) > strlen(authpass) && strncmp(tmpstr, authpass, strlen(authpass)) == 0) {
-                            tmpstr += strlen(authpass);
-
-                            if (*tmpstr == ' ') {
-                                tmpstr++;
-                                parseok = 1;
-                            }
-                        }
-                    }
-                    if (parseok == 0) {
-                        merror("%s: ERROR: Invalid password provided by %s. Closing connection.", ARGV0, srcip);
-                        SSL_CTX_free(ctx);
-                        close(client_sock);
-                        exit(0);
-                    }
-                }
-
-                /* Checking for action A (add agent) */
-                parseok = 0;
-                if (strncmp(tmpstr, "OSSEC A:'", 9) == 0) {
-                    agentname = tmpstr + 9;
-                    tmpstr += 9;
-                    while (*tmpstr != '\0') {
-                        if (*tmpstr == '\'') {
-                            *tmpstr = '\0';
-                            verbose("%s: INFO: Received request for a new agent (%s) from: %s", ARGV0, agentname, srcip);
-                            parseok = 1;
-                            break;
-                        }
-                        tmpstr++;
-                    }
-                }
-                if (parseok == 0) {
-                    merror("%s: ERROR: Invalid request for new agent from: %s", ARGV0, srcip);
-                } else {
-                    int acount = 2;
-                    char fname[2048 + 1];
-                    char response[2048 + 1];
-                    char *finalkey = NULL;
-                    response[2048] = '\0';
-                    fname[2048] = '\0';
-                    if (!OS_IsValidName(agentname)) {
-                        merror("%s: ERROR: Invalid agent name: %s from %s", ARGV0, agentname, srcip);
-                        snprintf(response, 2048, "ERROR: Invalid agent name: %s\n\n", agentname);
-                        SSL_write(ssl, response, strlen(response));
-                        snprintf(response, 2048, "ERROR: Unable to add agent.\n\n");
-                        SSL_write(ssl, response, strlen(response));
-                        sleep(1);
-                        exit(0);
-                    }
-
-                    /* Check for duplicate names */
-                    strncpy(fname, agentname, 2048);
-                    while (NameExist(fname)) {
-                        snprintf(fname, 2048, "%s%d", agentname, acount);
-                        acount++;
-                        if (acount > 256) {
-                            merror("%s: ERROR: Invalid agent name %s (duplicated)", ARGV0, agentname);
-                            snprintf(response, 2048, "ERROR: Invalid agent name: %s\n\n", agentname);
-                            SSL_write(ssl, response, strlen(response));
-                            snprintf(response, 2048, "ERROR: Unable to add agent.\n\n");
-                            SSL_write(ssl, response, strlen(response));
-                            sleep(1);
-                            exit(0);
-                        }
-                    }
-                    agentname = fname;
-
-                    /* Add the new agent */
-                    if (use_ip_address) {
-                        finalkey = OS_AddNewAgent(agentname, srcip, NULL);
-                    } else {
-                        finalkey = OS_AddNewAgent(agentname, NULL, NULL);
-                    }
-                    if (!finalkey) {
-                        merror("%s: ERROR: Unable to add agent: %s (internal error)", ARGV0, agentname);
-                        snprintf(response, 2048, "ERROR: Internal manager error adding agent: %s\n\n", agentname);
-                        SSL_write(ssl, response, strlen(response));
-                        snprintf(response, 2048, "ERROR: Unable to add agent.\n\n");
-                        SSL_write(ssl, response, strlen(response));
-                        sleep(1);
-                        exit(0);
-                    }
-
-                    snprintf(response, 2048, "OSSEC K:'%s'\n\n", finalkey);
-                    verbose("%s: INFO: Agent key generated for %s (requested by %s)", ARGV0, agentname, srcip);
-                    ret = SSL_write(ssl, response, strlen(response));
-                    if (ret < 0) {
-                        merror("%s: ERROR: SSL write error (%d)", ARGV0, ret);
-                        merror("%s: ERROR: Agen key not saved for %s", ARGV0, agentname);
-                        ERR_print_errors_fp(stderr);
-                    } else {
-                        verbose("%s: INFO: Agent key created for %s (requested by %s)", ARGV0, agentname, srcip);
-                    }
-                }
+                process_agent_request(tmpstr, authpass, use_ip_address, srcip, use_noisesocket, ssl);
 
                 clean_exit(ctx, client_sock);
             }
