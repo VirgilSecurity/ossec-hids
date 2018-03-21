@@ -4,12 +4,8 @@ MAINTAINER Support <support@atomicorp.com>
 RUN yum -y update
 RUN yum -y install wget useradd postfix && yum clean all
 
-RUN cd /root; NON_INT=1 wget -q -O - https://updates.atomicorp.com/installers/atomic |sh
-
-
-RUN yum -y install ossec-hids-server
-
-ADD default_agent /var/ossec/default_agent
+# copy compiled artifact
+ADD ossec-server-artifact/* /var/ossec/
 
 # copy base config
 ADD ossec.conf /var/ossec/etc/
