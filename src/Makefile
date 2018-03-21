@@ -319,12 +319,36 @@ ifneq (,$(filter ${USE_OPENSSL},yes y Y 1))
 	endif
 endif
 
-# Noisesocket ###########
+# Noisesocket ########### TODO: Simplify it !!!
 ifeq (${NOISESOCKET_ENABLE},yes)
 	DEFINES+=-DNOISESOCKET_ENABLED
+	CFLAGS+=-fno-omit-frame-pointer
+	CFLAGS+=-fsanitize=address
 	CFLAGS+=-I${EXTERNAL_NOISESOCKET}/include
+	CFLAGS+=-I${EXTERNAL_NOISESOCKET}/ext/noisesocket-lib/include
+	CFLAGS+=-I${EXTERNAL_NOISESOCKET}/ext/noisesocket-lib/include/noisesocket
 	OSSEC_LDFLAGS+=-L${EXTERNAL_NOISESOCKET}_build
-	OSSEC_LDFLAGS+=-lvirgil-noisesocket
+	OSSEC_LDFLAGS+=-L${EXTERNAL_NOISESOCKET}_build/ext/noisesocket-lib
+	OSSEC_LDFLAGS+=-L${EXTERNAL_NOISESOCKET}_build/ext/virgil-sdk-cpp
+	OSSEC_LDFLAGS+=-L${EXTERNAL_NOISESOCKET}_build/depends/installed/lib
+	OSSEC_LDFLAGS+=-L${EXTERNAL_NOISESOCKET}_build/ext/noisesocket-lib/src/noise-protocol
+	OSSEC_LDFLAGS+=-lvirgil-noisesocket 
+	OSSEC_LDFLAGS+=-lnoisesocket 
+	OSSEC_LDFLAGS+=-lnoise-protocol 
+	OSSEC_LDFLAGS+=-lvirgil_sdk_d 
+	OSSEC_LDFLAGS+=-lvirgil_crypto_d 
+	OSSEC_LDFLAGS+=-lmbedtls 
+	OSSEC_LDFLAGS+=-lmbedcrypto 
+	OSSEC_LDFLAGS+=-led25519 
+	OSSEC_LDFLAGS+=-lrestless 
+	OSSEC_LDFLAGS+=-lasan 
+	OSSEC_LDFLAGS+=-luv 
+	OSSEC_LDFLAGS+=-lstdc++ 
+	OSSEC_LDFLAGS+=-lm 
+	OSSEC_LDFLAGS+=-lsodium 
+	OSSEC_LDFLAGS+=-lcurl
+	OSSEC_LDFLAGS+=-fno-omit-frame-pointer
+	OSSEC_LDFLAGS+=-fsanitize=address
 endif # NOISESOCKET_ENABLE
 
 ####################

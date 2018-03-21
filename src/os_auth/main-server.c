@@ -37,6 +37,7 @@ int main()
 #include <sys/wait.h>
 #include "auth.h"
 #include "os_crypto/md5/md5_op.h"
+#include "virgil-noisesocket.h"
 
 /* TODO: Pulled this value out of the sky, may or may not be sane */
 #define POOL_SIZE 512
@@ -271,6 +272,34 @@ static int process_agent_request(char *request,
     return RES_OK;
 }
 
+static void noisesocket_server(int port)
+{
+    uv_loop_t *uv_loop = NULL;
+
+    const char *addr = "0.0.0.0";
+
+    vn_server_t *server = NULL;
+
+    /* Create UV loops */
+    uv_loop = uv_default_loop();
+
+    vn_virgil_credentials_t virgil_credentials;
+    virgil_credentials.token = "AT.1e4554197853556d3f66fb71afb15629524eae58ba4fd59ba4f94959b8d18677";
+    virgil_credentials.app_id = "8348cc9c0cff04328404b8b1122b18caa1cbb1e9b30e9386a0dc543c9a803a2d";
+    virgil_credentials.private_key = "MIGhMF0GCSqGSIb3DQEFDTBQMC8GCSqGSIb3DQEFDDAiBBAtpTHSss+sKcW0Z5RvVwgKAgIfeDAKBggqhkiG9w0CCjAdBglghkgBZQMEASoEEJm+qFYlntvXKZQymeuTXD8EQPVyCvP521iWDJJfeBo2lwOf/FvfFsD3Dzayytw81V9TdxddCemntdHM2F8GgpQ+hDLZtKUyaXgzUBjSqCu0K+w=";
+    virgil_credentials.private_key_password = "qweASD123";
+
+    /* Start server */
+    server = vn_server_new(addr, port,
+                           "NOISESOCKET SERVER",
+                           virgil_credentials,
+                           uv_loop);
+    vn_server_start(server);
+    uv_run(uv_loop, UV_RUN_DEFAULT);
+
+    vn_server_free(server);
+}
+
 int main(int argc, char **argv)
 {
     FILE *fp;
@@ -464,6 +493,15 @@ int main(int argc, char **argv)
     }
     fclose(fp);
 
+    /* Setup random */
+    srandom_init();
+
+    /* Start Noisesocket */
+    if (use_noisesocket) {
+        noisesocket_server(portnum);
+        return 0;
+    }
+
     /* Start SSL */
     ctx = os_ssl_keys(1, dir, ciphers, server_cert, server_key, ca_cert);
     if (!ctx) {
@@ -480,9 +518,6 @@ int main(int argc, char **argv)
 
     fcntl(sock, F_SETFL, O_NONBLOCK);
     debug1("%s: DEBUG: Going into listening mode.", ARGV0);
-
-    /* Setup random */
-    srandom_init();
 
     /* Chroot */
 /*
