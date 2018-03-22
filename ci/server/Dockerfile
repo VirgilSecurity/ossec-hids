@@ -6,6 +6,7 @@ RUN yum -y install wget useradd postfix && yum clean all
 
 # copy compiled artifact
 ADD ossec-server-artifact/* /var/ossec/
+ADD virgild-artifact/virgild /opt/virgild
 
 # copy base config
 ADD ossec.conf /var/ossec/etc/

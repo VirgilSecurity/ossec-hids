@@ -23,7 +23,7 @@ stage("Build"){
     def slaves = [:]
     slaves["ossec-server-builder"] = createOssecServerBuild("build-docker")
     slaves["ossec-client-builder"] = createOssecClientBuild("build-docker")
-    // slaves["virgild-builder"] = createVirgildBuild()
+    slaves["virgild-builder"] = createVirgildBuild("build-docker")
     slaves paralell
 }
 
@@ -45,7 +45,7 @@ stage("Create Server Docker image"){
         unstash "ossec-server-docker-files"
         unstash "ossec-ci-server"
 
-        // here must be docker build
+        docker build -t ossec-server .
     }
 }
 
@@ -62,7 +62,7 @@ stage("Create Client Docker image"){
         unstash "ossec-server-docker-files"
         unstash "ossec-ci-client"
 
-        // here must be docker build
+        docker build -t ossec-client .
     }
 }
 
@@ -104,6 +104,8 @@ def createVirgildBuild(slave){
     return {
         node(slave){
             make buil_in_docker-env
+            stash includes: 'virgild', name: "virgild-artifact"
+            clearContentUnix()
         }
     }
 }
