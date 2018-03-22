@@ -27,7 +27,17 @@
 #include "shared.h"
 #include "check_cert.h"
 
-#ifndef LIBOPENSSL_ENABLED
+/* Return codes */
+#define RES_OK                      (0)
+#define RES_REGISTRATION_ERROR      (-1)
+#define RES_PASSWORD_ERROR          (-2)
+#define RES_PARSE_ERROR             (-3)
+#define RES_WRITE_ERROR             (-4)
+#define RES_KEY_SAVE_ERROR          (-5)
+
+#define BUF_SZ                      (2048)
+
+#if 0//!defined(LIBOPENSSL_ENABLED) && !defined(NOISESOCKET_ENABLED)
 
 int main()
 {
@@ -46,13 +56,14 @@ static void help_agent_auth(void) __attribute__((noreturn));
 static void help_agent_auth()
 {
     print_header();
-    print_out("  %s: -[Vhdt] [-g group] [-D dir] [-m IP address] [-p port] [-A name] [-c ciphers] [-v path] [-x path] [-k path]", ARGV0);
+    print_out("  %s: -[VhdtN] [-g group] [-D dir] [-m IP address] [-p port] [-A name] [-c ciphers] [-v path] [-x path] [-k path]", ARGV0);
     print_out("    -V          Version and license message");
     print_out("    -h          This help message");
     print_out("    -d          Execute in debug mode. This parameter");
     print_out("                can be specified multiple times");
     print_out("                to increase the debug level.");
     print_out("    -t          Test configuration");
+    print_out("    -N          Use Noisesocket");
     print_out("    -g <group>  Group to run as (default: %s)", GROUPGLOBAL);
     print_out("    -D <dir>    Directory to chroot into (default: %s)", DEFAULTDIR);
     print_out("    -m <addr>   Manager IP address");
@@ -67,6 +78,86 @@ static void help_agent_auth()
     exit(1);
 }
 
+static int write_server(int use_noisesocket, void *ctx, const void *buf, int num)
+{
+    if (!use_noisesocket) {
+        return SSL_write((SSL*)ctx, buf, num);
+    } else {
+
+    }
+
+    return RES_WRITE_ERROR;
+}
+
+static int send_registration_request(int use_noisesocket, void *ctx, const char *authpass, const char *agentname) {
+    char buf[BUF_SZ];
+    int ret;
+
+    printf("INFO: Using agent name as: %s\n", agentname);
+
+    memset(buf, 0, sizeof(buf));
+    if (authpass) {
+        snprintf(buf, BUF_SZ, "OSSEC PASS: %s OSSEC A:'%s'\n", authpass, agentname);
+    }
+    else {
+        snprintf(buf, BUF_SZ, "OSSEC A:'%s'\n", agentname);
+    }
+
+    ret = write_server(use_noisesocket, ctx, buf, strlen(buf));
+    if (ret < 0) {
+        printf("SSL write error (unable to send message.)\n");
+        ERR_print_errors_fp(stderr);
+        return RES_WRITE_ERROR;
+    }
+
+    return RES_OK;
+}
+
+static int process_response(char *data, int data_sz) {
+    data[data_sz] = '\0';
+    if (strncmp(data, "ERROR", 5) == 0) {
+        char *tmpstr;
+        tmpstr = strchr(data, '\n');
+        if (tmpstr) {
+            *tmpstr = '\0';
+        }
+        printf("%s (from manager)\n", data);
+    } else if (strncmp(data, "OSSEC K:'", 9) == 0) {
+        char *key;
+        char *tmpstr;
+        char **entry;
+        printf("INFO: Received response with agent key\n");
+
+        key = data;
+        key += 9;
+        tmpstr = strchr(key, '\'');
+        if (!tmpstr) {
+            printf("ERROR: Invalid key received. Closing connection.\n");
+            return RES_PARSE_ERROR;
+        }
+        *tmpstr = '\0';
+        entry = OS_StrBreak(' ', key, 4);
+        if (!OS_IsValidID(entry[0]) || !OS_IsValidName(entry[1]) ||
+                !OS_IsValidName(entry[2]) || !OS_IsValidName(entry[3])) {
+            printf("ERROR: Invalid key received (2). Closing connection.\n");
+            return RES_PARSE_ERROR;
+        }
+
+        {
+            FILE *fp;
+            fp = fopen(KEYSFILE_PATH, "w");
+            if (!fp) {
+                printf("ERROR: Unable to open key file: %s", KEYSFILE_PATH);
+                return RES_KEY_SAVE_ERROR;
+            }
+            fprintf(fp, "%s\n", key);
+            fclose(fp);
+        }
+        printf("INFO: Valid key created. Finished.\n");
+    }
+    return RES_OK;
+}
+
 int main(int argc, char **argv)
 {
     int key_added = 0;
@@ -77,7 +168,7 @@ int main(int argc, char **argv)
     gid_t gid = 0;
 #endif
 
-    int sock = 0, portnum, ret = 0;
+    int sock = 0, portnum, ret = 0, use_noisesocket = 0;
     char *port = DEFAULT_PORT;
     char *ciphers = DEFAULT_CIPHERS;
     const char *dir = DEFAULTDIR;
@@ -103,7 +194,7 @@ int main(int argc, char **argv)
     /* Set the name */
     OS_SetName(ARGV0);
 
-    while ((c = getopt(argc, argv, "Vdhtg:m:p:A:c:v:x:k:D:P:")) != -1) {
+    while ((c = getopt(argc, argv, "VdhtgN:m:p:A:c:v:x:k:D:P:")) != -1) {
         switch (c) {
             case 'V':
                 print_version();
@@ -128,6 +219,9 @@ int main(int argc, char **argv)
             break;
             case 't':
                 test_config = 1;
+                break;
+            case 'N':
+                use_noisesocket = 1;
                 break;
             case 'm':
                 if (!optarg) {
@@ -234,21 +328,13 @@ int main(int argc, char **argv)
         agentname = lhostname;
     }
 
-    /* Start SSL */
-    ctx = os_ssl_keys(0, dir, ciphers, agent_cert, agent_key, ca_cert);
-    if (!ctx) {
-        merror("%s: ERROR: SSL error. Exiting.", ARGV0);
-        exit(1);
+    if(authpass == NULL) {
+        authpass = AUTHDPASS_PATH;
     }
 
     if (!manager) {
         merror("%s: ERROR: Manager IP not set.", ARGV0);
         exit(1);
-    }
-
-
-    if(authpass == NULL) {
-        authpass = AUTHDPASS_PATH;
     }
 
     /* Checking if there is a custom password file */
@@ -280,6 +366,18 @@ int main(int argc, char **argv)
     if (!authpass) {
         printf("WARN: No authentication password provided. Insecure mode started.\n");
     }
+
+    if (use_noisesocket) {
+
+    }
+
+    /* Start SSL */
+    ctx = os_ssl_keys(0, dir, ciphers, agent_cert, agent_key, ca_cert);
+    if (!ctx) {
+        merror("%s: ERROR: SSL error. Exiting.", ARGV0);
+        exit(1);
+    }
+
 
     /* Connect via TCP */
     sock = OS_ConnectTCP(port, manager);
@@ -314,22 +412,11 @@ int main(int argc, char **argv)
         }
     }
 
-    printf("INFO: Using agent name as: %s\n", agentname);
 
-    memset(buf, 0, sizeof(buf));
-    if (authpass) {
-        snprintf(buf, 2048, "OSSEC PASS: %s OSSEC A:'%s'\n", authpass, agentname);
-    }
-    else {
-        snprintf(buf, 2048, "OSSEC A:'%s'\n", agentname);
-    }
-
-    ret = SSL_write(ssl, buf, strlen(buf));
-    if (ret < 0) {
-        printf("SSL write error (unable to send message.)\n");
-        ERR_print_errors_fp(stderr);
+    if (RES_OK != send_registration_request(use_noisesocket, ssl, authpass, agentname)) {
         exit(1);
     }
+
 
     printf("INFO: Send request to manager. Waiting for reply.\n");
 
@@ -337,48 +424,12 @@ int main(int argc, char **argv)
         ret = SSL_read(ssl, buf, sizeof(buf) - 1);
         switch (SSL_get_error(ssl, ret)) {
             case SSL_ERROR_NONE:
-                buf[ret] = '\0';
-                if (strncmp(buf, "ERROR", 5) == 0) {
-                    char *tmpstr;
-                    tmpstr = strchr(buf, '\n');
-                    if (tmpstr) {
-                        *tmpstr = '\0';
-                    }
-                    printf("%s (from manager)\n", buf);
-                } else if (strncmp(buf, "OSSEC K:'", 9) == 0) {
-                    char *key;
-                    char *tmpstr;
-                    char **entry;
-                    printf("INFO: Received response with agent key\n");
 
-                    key = buf;
-                    key += 9;
-                    tmpstr = strchr(key, '\'');
-                    if (!tmpstr) {
-                        printf("ERROR: Invalid key received. Closing connection.\n");
-                        exit(1);
-                    }
-                    *tmpstr = '\0';
-                    entry = OS_StrBreak(' ', key, 4);
-                    if (!OS_IsValidID(entry[0]) || !OS_IsValidName(entry[1]) ||
-                            !OS_IsValidName(entry[2]) || !OS_IsValidName(entry[3])) {
-                        printf("ERROR: Invalid key received (2). Closing connection.\n");
-                        exit(1);
-                    }
-
-                    {
-                        FILE *fp;
-                        fp = fopen(KEYSFILE_PATH, "w");
-                        if (!fp) {
-                            printf("ERROR: Unable to open key file: %s", KEYSFILE_PATH);
-                            exit(1);
-                        }
-                        fprintf(fp, "%s\n", key);
-                        fclose(fp);
-                    }
-                    key_added = 1;
-                    printf("INFO: Valid key created. Finished.\n");
+                if (RES_OK != process_response(buf, ret)) {
+                    exit(1);
                 }
+                key_added = 1;
+
                 break;
             case SSL_ERROR_ZERO_RETURN:
             case SSL_ERROR_SYSCALL:
