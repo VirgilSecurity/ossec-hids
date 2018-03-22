@@ -8,7 +8,7 @@ stage("Get code"){
         stash includes: 'ci/client/**', name: "ossec-ci-client"
 
         clearContentUnix()
-        git 'https://github.com/VirgilSecurity/virgild.git'
+        git branch: "no-auth", url: 'https://github.com/VirgilSecurity/virgild.git'
         stash includes: '**', name: "virgild-code"
         
         clearContentUnix()
@@ -103,9 +103,7 @@ def createOssecClientBuild(slave){
 def createVirgildBuild(slave){
     return {
         node(slave){
-            docker.image("centos:7").inside("--user root"){
-                
-            }
+            make buil_in_docker-env
         }
     }
 }
