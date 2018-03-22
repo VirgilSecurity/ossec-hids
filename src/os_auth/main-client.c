@@ -27,6 +27,11 @@
 #include "shared.h"
 #include "check_cert.h"
 
+#ifdef NOISESOCKET_ENABLED
+#include <uv.h>
+#include <virgil-noisesocket.h>
+#endif
+
 /* Return codes */
 #define RES_OK                      (0)
 #define RES_REGISTRATION_ERROR      (-1)
@@ -158,6 +163,33 @@ static int process_response(char *data, int data_sz) {
     return RES_OK;
 }
 
+void client_reg_result_cb(__attribute__((unused))vn_client_t *ctx, vn_result_t result) {
+    printf("INFO: Registration result %s\n", VN_OK == result ? "OK" : "ERROR");
+}
+
+static int noisesocket_client(const char *addr, int port, const char *identity, const char *password) {
+    /* Do we need to use tickets ? */
+    vn_ticket_t ticket;
+
+    vn_client_t *client;
+    uv_loop_t *uv_loop = NULL;
+
+    // Create UV loops
+    uv_loop = uv_default_loop();
+
+    client = vn_client_new(identity, password, uv_loop);
+    vn_client_register(client,
+            addr, port,
+            &ticket,
+            client_reg_result_cb);
+
+    uv_run(uv_loop, UV_RUN_DEFAULT);
+
+    vn_client_free(client);
+
+    return RES_OK;
+}
+
 int main(int argc, char **argv)
 {
     int key_added = 0;
@@ -194,7 +226,7 @@ int main(int argc, char **argv)
     /* Set the name */
     OS_SetName(ARGV0);
 
-    while ((c = getopt(argc, argv, "VdhtgN:m:p:A:c:v:x:k:D:P:")) != -1) {
+    while ((c = getopt(argc, argv, "NVdhtg:m:p:A:c:v:x:k:D:P:")) != -1) {
         switch (c) {
             case 'V':
                 print_version();
@@ -212,11 +244,11 @@ int main(int argc, char **argv)
                 group = optarg;
                 break;
             case 'D':
-            if (!optarg) {
-                ErrorExit("%s: -g needs an argument", ARGV0);
-            }
-            dir = optarg;
-            break;
+                if (!optarg) {
+                    ErrorExit("%s: -g needs an argument", ARGV0);
+                }
+                dir = optarg;
+                break;
             case 't':
                 test_config = 1;
                 break;
@@ -367,8 +399,10 @@ int main(int argc, char **argv)
         printf("WARN: No authentication password provided. Insecure mode started.\n");
     }
 
+    /* Start Noisesocket */
     if (use_noisesocket) {
-
+        ret = noisesocket_client(manager, portnum, agentname, agentname);
+        exit(ret);
     }
 
     /* Start SSL */
