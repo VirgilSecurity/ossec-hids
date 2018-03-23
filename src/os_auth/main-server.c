@@ -340,10 +340,9 @@ static void noisesocket_server(int port)
     uv_loop = uv_default_loop();
 
     vn_virgil_credentials_t virgil_credentials;
-    virgil_credentials.token = "AT.1e4554197853556d3f66fb71afb15629524eae58ba4fd59ba4f94959b8d18677";
-    virgil_credentials.app_id = "8348cc9c0cff04328404b8b1122b18caa1cbb1e9b30e9386a0dc543c9a803a2d";
-    virgil_credentials.private_key = "MIGhMF0GCSqGSIb3DQEFDTBQMC8GCSqGSIb3DQEFDDAiBBAtpTHSss+sKcW0Z5RvVwgKAgIfeDAKBggqhkiG9w0CCjAdBglghkgBZQMEASoEEJm+qFYlntvXKZQymeuTXD8EQPVyCvP521iWDJJfeBo2lwOf/FvfFsD3Dzayytw81V9TdxddCemntdHM2F8GgpQ+hDLZtKUyaXgzUBjSqCu0K+w=";
-    virgil_credentials.private_key_password = "qweASD123";
+    memset(&virgil_credentials, 0, sizeof(virgil_credentials));
+    virgil_credentials.cards_service = "http://127.0.0.1:8080/v4";
+    virgil_credentials.cards_ro_service = "http://127.0.0.1:8080/v4";
 
     /* Start server */
     server = vn_server_new(addr, port,
