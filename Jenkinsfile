@@ -3,7 +3,7 @@ stage("Get code"){
     node("master"){
         clearContentUnix()
         checkout scm
-        stash includes: '**', excludes: "ci" name: "ossec-code"
+        stash includes: '**', excludes: "ci", name: "ossec-code"
         stash includes: 'ci/server/**', name: "ossec-ci-server"
         stash includes: 'ci/client/**', name: "ossec-ci-client"
 
@@ -24,45 +24,50 @@ stage("Build"){
     slaves["ossec-server-builder"] = createOssecServerBuild("build-docker")
     slaves["ossec-client-builder"] = createOssecClientBuild("build-docker")
     slaves["virgild-builder"] = createVirgildBuild("build-docker")
-    slaves paralell
+    parallel slaves
 }
 
 stage("Create Server Docker image"){
     node("build-docker"){
+        ws {
+            docker.image("centos:7").inside("--user root"){
+                clearContentUnix()
+            }
+            sh 'mkdir ossec-server-artifact'
+            dir('ossec-server-artifact'){
+                unstash "ossec-server-artifact"
+            }
 
-        clearContentUnix()
+            sh "mkdir virgild-artifact"
+            dir("virgild-artifact"){
+                unstash "virgild-artifact"
+            }
 
-        sh 'mkdir ossec-artifact'
-        dir('ossec-artifact'){
-            unstash "ossec-server-artifact"
+            unstash "ossec-server-docker-files"
+            unstash "ossec-ci-server"
+            sh "mv ci/server/* ./"
+
+            sh "docker build -t ossec-server ."
         }
-        
-        sh "mkdir virgild-artifact"
-        dir("virgild-artifact"){
-            unstash "virgild-artifact"
-        }
-
-        unstash "ossec-server-docker-files"
-        unstash "ossec-ci-server"
-
-        docker build -t ossec-server .
     }
 }
 
 stage("Create Client Docker image"){
     node("build-docker"){
 
-        clearContentUnix()
-
-        sh 'mkdir ossec-artifact'
-        dir('ossec-artifact'){
-            unstash "ossec-client-artifact"
+        docker.image("centos:7").inside("--user root"){
+            clearContentUnix()
         }
 
-        unstash "ossec-server-docker-files"
-        unstash "ossec-ci-client"
+        sh 'mkdir ossec-agent-artifact'
+        dir('ossec-agent-artifact'){
+            unstash "ossec-agent-artifact"
+        }
 
-        docker build -t ossec-client .
+        unstash "ossec-ci-client"
+        sh "mv ci/client/* ./"
+
+        sh "docker build -t ossec-client ."
     }
 }
 
@@ -70,15 +75,22 @@ stage("Create Client Docker image"){
 def createOssecServerBuild(slave){
     return {
         node(slave){
-            docker.image("centos:7").inside("--user root"){
-                sh "yum install -y epel-release"
-                sh "yum install -y make"
-                sh "yum groupinstall -y 'Development Tools'"
-                sh "./install.sh"
-                sh "cp -r /var/ossec ./artifact"
+            ws {
+                docker.image("centos:7").inside("--user root"){
+                    clearContentUnix()
+                }
+                unstash "ossec-code"
+                docker.image("centos:7").inside("--user root"){
+                    sh "yum install -y epel-release"
+                    sh "yum install -y make"
+                    sh "yum install -y which bind-utils"
+                    sh "yum groupinstall -y 'Development Tools'"
+                    sh "./install.sh"
+                    sh "mkdir artifact"
+                    sh "cp -r /var/ossec/* ./artifact/"
+                }
+                stash includes: 'artifact/**', name: "ossec-server-artifact"
             }
-            stash includes: 'artifact/**', name: "ossec-server-artifact"
-            clearContentUnix("artifact")
         }
     }
 }
@@ -86,16 +98,25 @@ def createOssecServerBuild(slave){
 def createOssecClientBuild(slave){
     return {
         node(slave){
-            docker.image("centos:7").inside("--user root"){
-                sh "yum install -y epel-release"
-                sh "yum install -y make"
-                sh "yum groupinstall -y 'Development Tools'"
-                sh "sed 's/USER_INSTALL_TYPE=\"server\"/USER_INSTALL_TYPE=\"client\"/g'"
-                sh "./install.sh"
-                sh "cp -r /var/ossec ./artifact"
+            ws {
+                docker.image("centos:7").inside("--user root"){
+                    clearContentUnix()
+                }
+                unstash "ossec-code"
+                docker.image("centos:7").inside("--user root"){
+                    sh "yum install -y epel-release"
+                    sh "yum install -y make"
+                    sh "yum install -y which bind-utils"
+                    sh "yum groupinstall -y 'Development Tools'"
+                    sh "sed -i\'\' -e 's/USER_INSTALL_TYPE=\"server\"/USER_INSTALL_TYPE=\"agent\"/g' etc/preloaded-vars.conf"
+                    sh "sed -i\'\' -e 's/#USER_AGENT_SERVER_NAME=\"ossec-server\"/USER_AGENT_SERVER_NAME=\"ossec-server\"/g' etc/preloaded-vars.conf"
+                    sh "sed -i\'\' -e 's/#USER_AGENT_CONFIG_PROFILE=\"generic\"/USER_AGENT_CONFIG_PROFILE=\"generic\"/g' etc/preloaded-vars.conf"
+                    sh "./install.sh"
+                    sh "mkdir artifact"
+                    sh "cp -r /var/ossec/* ./artifact/"
+                }
+                stash includes: 'artifact/**', name: "ossec-agent-artifact"
             }
-            stash includes: 'artifact/**', name: "ossec-client-artifact"
-            clearContentUnix("artifact")
         }
     }
 }
@@ -103,9 +124,15 @@ def createOssecClientBuild(slave){
 def createVirgildBuild(slave){
     return {
         node(slave){
-            make buil_in_docker-env
-            stash includes: 'virgild', name: "virgild-artifact"
-            clearContentUnix()
+            ws {
+                docker.image("centos:7").inside("--user root"){
+                    clearContentUnix()
+                }
+                unstash "virgild-code"
+                sh "sed -i\'\' -e 's/-it/-i/g' Makefile"
+                sh "make build_in_docker-env"
+                stash includes: 'virgild', name: "virgild-artifact"
+            }
         }
     }
 }
