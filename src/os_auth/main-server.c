@@ -22,6 +22,10 @@
  *
  */
 
+#ifndef NOISESOCKET_ENABLED
+#define NOISESOCKET_ENABLED
+#endif
+
 #if !defined(LIBOPENSSL_ENABLED) && !defined(NOISESOCKET_ENABLED)
 
 #include <stdlib.h>
@@ -48,6 +52,10 @@ int main()
 #define RES_PASSWORD_ERROR          (-2)
 #define RES_PARSE_ERROR             (-3)
 #define RES_WRITE_ERROR             (-4)
+
+static char *authpass = NULL;
+static int use_ip_address = 0;
+static char srcip[IPSIZE + 1];
 
 /* Prototypes */
 static void help_authd(void) __attribute((noreturn));
@@ -158,7 +166,11 @@ static int write_agent(int use_noisesocket, void *ctx, const void *buf, int num)
     if (!use_noisesocket) {
         return SSL_write((SSL*)ctx, buf, num);
     } else {
-
+#ifdef NOISESOCKET_ENABLED
+        if (VN_OK == vn_server_send(ctx, (const uint8_t*)buf, num)) {
+            return RES_OK;
+        }
+#endif
     }
 
     return RES_WRITE_ERROR;
@@ -171,6 +183,14 @@ static int process_agent_request(char *request,
     int parseok = 0;
     int ret = 0;
     char *agentname = NULL;
+
+#ifdef NOISESOCKET_ENABLED
+    vn_serverside_client_t *client = 0;
+
+    if (use_noisesocket) {
+        client = (vn_serverside_client_t*)write_ctx;
+    }
+#endif
 
     /* Checking for shared password authentication. */
     if (authpass) {
@@ -242,6 +262,17 @@ static int process_agent_request(char *request,
         }
         agentname = fname;
 
+#ifdef NOISESOCKET_ENABLED
+        if (use_noisesocket) {
+            if (VN_OK != vn_server_create_card(client)) {
+                merror("%s: ERROR: Cannot create Virgil Card", ARGV0);
+                snprintf(response, 2048, "RROR: Cannot create Virgil Card\n\n");
+                write_agent(use_noisesocket, write_ctx, response, strlen(response));
+                return RES_REGISTRATION_ERROR;
+            }
+        }
+#endif
+
         /* Add the new agent */
         if (use_ip_address) {
             finalkey = OS_AddNewAgent(agentname, srcip, NULL);
@@ -257,7 +288,13 @@ static int process_agent_request(char *request,
             return RES_REGISTRATION_ERROR;
         }
 
-        snprintf(response, 2048, "OSSEC K:'%s'\n\n", finalkey);
+        if (use_noisesocket) {
+#ifdef NOISESOCKET_ENABLED
+            snprintf(response, 2048, "OSSEC K:'%s' OSSEC CARD:'%s'\n\n", finalkey, client->card_id);
+#endif
+        } else {
+            snprintf(response, 2048, "OSSEC K:'%s'\n\n", finalkey);
+        }
         verbose("%s: INFO: Agent key generated for %s (requested by %s)", ARGV0, agentname, srcip);
         ret = write_agent(use_noisesocket, write_ctx, response, strlen(response));
         if (ret < 0) {
@@ -270,6 +307,25 @@ static int process_agent_request(char *request,
     }
 
     return RES_OK;
+}
+
+#ifdef NOISESOCKET_ENABLED
+
+static void on_client_accepted(vn_serverside_client_t *ctx)
+{
+    printf("           SERVER: New client is connected %s\n", ctx->ip);
+}
+
+static void on_client_disconnected(vn_serverside_client_t *ctx)
+{
+    printf("           SERVER: Client is disconnected %s\n", ctx->ip);
+}
+
+static void on_client_received(vn_serverside_client_t *client, uint8_t *data, size_t data_sz)
+{
+    data[data_sz] = 0;
+    printf("           SERVER: Data received from client %s data: <%s>\n", client->ip, data);
+    process_agent_request((char*)data, authpass, use_ip_address, client->ip, true, client);
 }
 
 static void noisesocket_server(int port)
@@ -293,21 +349,26 @@ static void noisesocket_server(int port)
     server = vn_server_new(addr, port,
                            "NOISESOCKET SERVER",
                            virgil_credentials,
-                           uv_loop);
+                           uv_loop,
+                           on_client_accepted,
+                           on_client_disconnected,
+                           on_client_received);
     vn_server_start(server);
     uv_run(uv_loop, UV_RUN_DEFAULT);
 
     vn_server_free(server);
 }
 
+#endif //NOISESOCKET_ENABLED
+
 int main(int argc, char **argv)
 {
     FILE *fp;
-    char *authpass = NULL;
+
     /* Bucket to keep pids in */
     int process_pool[POOL_SIZE];
     /* Count of pids we are wait()ing on */
-    int c = 0, test_config = 0, use_ip_address = 0, pid = 0, status, i = 0, active_processes = 0, use_noisesocket = 0;
+    int c = 0, test_config = 0, pid = 0, status, i = 0, active_processes = 0, use_noisesocket = 0;
     int use_pass = 1;
     gid_t gid;
     int client_sock = 0, sock = 0, portnum, ret = 0;
@@ -321,7 +382,6 @@ int main(int argc, char **argv)
     char buf[4096 + 1];
     SSL_CTX *ctx;
     SSL *ssl;
-    char srcip[IPSIZE + 1];
     struct sockaddr_storage _nc;
     socklen_t _ncl;
 
