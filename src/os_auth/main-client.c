@@ -42,7 +42,16 @@
 
 #define BUF_SZ                      (2048)
 
-#if 0//!defined(LIBOPENSSL_ENABLED) && !defined(NOISESOCKET_ENABLED)
+
+static char *authpass = NULL;
+static const char *agentname = NULL;
+static int use_noisesocket = 0;
+
+#ifndef NOISESOCKET_ENABLED
+#define NOISESOCKET_ENABLED
+#endif
+
+#if !defined(LIBOPENSSL_ENABLED) && !defined(NOISESOCKET_ENABLED)
 
 int main()
 {
@@ -53,6 +62,7 @@ int main()
 #else
 
 #include <openssl/ssl.h>
+#include <uv-unix.h>
 #include "auth.h"
 
 static void help_agent_auth(void) __attribute__((noreturn));
@@ -88,7 +98,9 @@ static int write_server(int use_noisesocket, void *ctx, const void *buf, int num
     if (!use_noisesocket) {
         return SSL_write((SSL*)ctx, buf, num);
     } else {
-
+        if (VN_OK == vn_client_send(ctx, (const uint8_t*)buf, num)) {
+            return RES_OK;
+        }
     }
 
     return RES_WRITE_ERROR;
@@ -118,7 +130,7 @@ static int send_registration_request(int use_noisesocket, void *ctx, const char 
     return RES_OK;
 }
 
-static int process_response(char *data, int data_sz) {
+static int process_response(char *data, int data_sz, void *noisesocket) {
     data[data_sz] = '\0';
     if (strncmp(data, "ERROR", 5) == 0) {
         char *tmpstr;
@@ -129,6 +141,7 @@ static int process_response(char *data, int data_sz) {
         printf("%s (from manager)\n", data);
     } else if (strncmp(data, "OSSEC K:'", 9) == 0) {
         char *key;
+        char *card_id;
         char *tmpstr;
         char **entry;
         printf("INFO: Received response with agent key\n");
@@ -141,11 +154,34 @@ static int process_response(char *data, int data_sz) {
             return RES_PARSE_ERROR;
         }
         *tmpstr = '\0';
+        card_id = tmpstr + 2;
         entry = OS_StrBreak(' ', key, 4);
         if (!OS_IsValidID(entry[0]) || !OS_IsValidName(entry[1]) ||
                 !OS_IsValidName(entry[2]) || !OS_IsValidName(entry[3])) {
             printf("ERROR: Invalid key received (2). Closing connection.\n");
             return RES_PARSE_ERROR;
+        }
+
+        if (use_noisesocket) {
+            // Search for Card ID
+            if (0 != strncmp(card_id, "OSSEC CARD:'", 12)) {
+                return RES_PARSE_ERROR;
+            }
+            card_id += 12;
+            tmpstr = strchr(card_id, '\'');
+            if (!tmpstr) {
+                printf("ERROR: Invalid Card ID received. Closing connection.\n");
+                return RES_PARSE_ERROR;
+            }
+            *tmpstr = '\0';
+            
+            // Save Card ID
+            vn_client_t *client;
+            client = vn_client_from_socket((uv_tcp_t*)noisesocket);
+            if (VN_OK != vn_client_save_card_id(client, card_id)) {
+                printf("ERROR: Cannot save Card ID. Closing connection.\n");
+                return RES_KEY_SAVE_ERROR;
+            }
         }
 
         {
@@ -163,11 +199,30 @@ static int process_response(char *data, int data_sz) {
     return RES_OK;
 }
 
-void client_reg_result_cb(__attribute__((unused))vn_client_t *ctx, vn_result_t result) {
+void client_reg_result_cb(vn_client_t *ctx, vn_result_t result) {
     printf("INFO: Registration result %s\n", VN_OK == result ? "OK" : "ERROR");
+
+    if (RES_OK != send_registration_request(true, ctx, authpass, agentname)) {
+        exit(1);
+    }
+
+    printf("INFO: Send request to manager. Waiting for reply.\n");
 }
 
-static int noisesocket_client(const char *addr, int port, const char *identity, const char *password) {
+#ifdef NOISESOCKET_ENABLED
+
+static void on_read(uv_stream_t* stream, ssize_t nread, const uv_buf_t* buf)
+{
+    buf->base[nread] = 0;
+    printf("CLIENT: New data: %s\n", buf->base);
+
+    process_response(buf->base, nread, stream);
+
+    vn_client_disconnect(vn_client_from_socket((uv_tcp_t*)stream), NULL);
+}
+
+static int noisesocket_client(const char *addr, int port, const char *identity, const char *password)
+{
     /* Do we need to use tickets ? */
     vn_ticket_t ticket;
 
@@ -181,7 +236,8 @@ static int noisesocket_client(const char *addr, int port, const char *identity, 
     vn_client_register(client,
             addr, port,
             &ticket,
-            client_reg_result_cb);
+            client_reg_result_cb,
+            on_read);
 
     uv_run(uv_loop, UV_RUN_DEFAULT);
 
@@ -189,6 +245,8 @@ static int noisesocket_client(const char *addr, int port, const char *identity, 
 
     return RES_OK;
 }
+
+#endif //NOISESOCKET_ENABLED
 
 int main(int argc, char **argv)
 {
@@ -200,14 +258,12 @@ int main(int argc, char **argv)
     gid_t gid = 0;
 #endif
 
-    int sock = 0, portnum, ret = 0, use_noisesocket = 0;
+    int sock = 0, portnum, ret = 0;
     char *port = DEFAULT_PORT;
     char *ciphers = DEFAULT_CIPHERS;
     const char *dir = DEFAULTDIR;
     const char *group = GROUPGLOBAL;
-    char *authpass = NULL;
     const char *manager = NULL;
-    const char *agentname = NULL;
     const char *agent_cert = NULL;
     const char *agent_key = NULL;
     const char *ca_cert = NULL;
@@ -412,7 +468,6 @@ int main(int argc, char **argv)
         exit(1);
     }
 
-
     /* Connect via TCP */
     sock = OS_ConnectTCP(port, manager);
     if (sock <= 0) {
@@ -446,11 +501,9 @@ int main(int argc, char **argv)
         }
     }
 
-
     if (RES_OK != send_registration_request(use_noisesocket, ssl, authpass, agentname)) {
         exit(1);
     }
-
 
     printf("INFO: Send request to manager. Waiting for reply.\n");
 
@@ -459,7 +512,7 @@ int main(int argc, char **argv)
         switch (SSL_get_error(ssl, ret)) {
             case SSL_ERROR_NONE:
 
-                if (RES_OK != process_response(buf, ret)) {
+                if (RES_OK != process_response(buf, ret, 0)) {
                     exit(1);
                 }
                 key_added = 1;
