@@ -174,7 +174,7 @@ static int process_response(char *data, int data_sz, void *noisesocket) {
                 return RES_PARSE_ERROR;
             }
             *tmpstr = '\0';
-            
+
             // Save Card ID
             vn_client_t *client;
             client = vn_client_from_socket((uv_tcp_t*)noisesocket);
@@ -221,7 +221,7 @@ static void on_read(uv_stream_t* stream, ssize_t nread, const uv_buf_t* buf)
     vn_client_disconnect(vn_client_from_socket((uv_tcp_t*)stream), NULL);
 }
 
-static int noisesocket_client(const char *addr, int port, const char *identity, const char *password)
+static int noisesocket_client(const char *addr, int port, const char *identity, const char *password, const char *dir)
 {
     /* Do we need to use tickets ? */
     vn_ticket_t ticket;
@@ -231,6 +231,8 @@ static int noisesocket_client(const char *addr, int port, const char *identity, 
 
     // Create UV loops
     uv_loop = uv_default_loop();
+
+    vn_storage_set_path(dir);
 
     client = vn_client_new(identity, password, uv_loop);
     vn_client_register(client,
@@ -457,7 +459,7 @@ int main(int argc, char **argv)
 
     /* Start Noisesocket */
     if (use_noisesocket) {
-        ret = noisesocket_client(manager, portnum, agentname, agentname);
+        ret = noisesocket_client(manager, portnum, agentname, agentname, dir);
         exit(ret);
     }
 
