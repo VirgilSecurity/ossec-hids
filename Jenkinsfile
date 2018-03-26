@@ -82,8 +82,8 @@ def createOssecServerBuild(slave){
                 unstash "ossec-code"
                 docker.image("centos:7").inside("--user root"){
                     
-                    installProtoC()
                     installDependencies()
+                    installProtoC()
                     
                     sh "./install.sh"
                     sh "mkdir artifact"
@@ -106,8 +106,8 @@ def createOssecClientBuild(slave){
                 unstash "ossec-code"
                 docker.image("centos:7").inside("--user root"){
 
-                    installProtoC()   
                     installDependencies()
+                    installProtoC()
 
                     sh "sed -i\'\' -e 's/USER_INSTALL_TYPE=\"server\"/USER_INSTALL_TYPE=\"agent\"/g' etc/preloaded-vars.conf"
                     sh "sed -i\'\' -e 's/#USER_AGENT_SERVER_NAME=\"ossec-server\"/USER_AGENT_SERVER_NAME=\"ossec-server\"/g' etc/preloaded-vars.conf"
@@ -148,7 +148,7 @@ def clearContentUnix() {
 def installDependencies(){
     sh "yum install -y epel-release"
     sh "yum install -y make"
-    sh "yum install -y which bind-utils protoc nanopb python-protobuf libsodium"
+    sh "yum install -y which bind-utils protoc nanopb python-protobuf libsodium unzip"
     sh "pip install --upgrade protobuf"
     sh "yum groupinstall -y 'Development Tools'"
 
