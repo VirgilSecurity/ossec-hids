@@ -146,15 +146,15 @@ def clearContentUnix() {
 }
 
 def installDependencies(){
-
+    
+    sh "yum install -y wget"
     sh "wget http://dl.fedoraproject.org/pub/epel/epel-release-latest-7.noarch.rpm"
     sh "rpm -ivh epel-release-latest-7.noarch.rpm"
     // clean after install
     sh "rm epel-release-latest-7.noarch.rpm"
 
     // sh "yum install -y epel-release"
-    sh "yum install -y make"
-    sh "yum install -y which bind-utils protoc nanopb python-protobuf libsodium unzip python-pip wget"
+    sh "yum install -y make which bind-utils protoc nanopb python-protobuf libsodium unzip python-pip"
     sh "pip install --upgrade protobuf"
     sh "yum groupinstall -y 'Development Tools'"
 
