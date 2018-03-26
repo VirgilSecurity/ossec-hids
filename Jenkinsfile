@@ -81,13 +81,14 @@ def createOssecServerBuild(slave){
                 }
                 unstash "ossec-code"
                 docker.image("centos:7").inside("--user root"){
-                    sh "yum install -y epel-release"
-                    sh "yum install -y make"
-                    sh "yum install -y which bind-utils"
-                    sh "yum groupinstall -y 'Development Tools'"
+                    
+                    installProtoC()
+                    installDependencies()
+                    
                     sh "./install.sh"
                     sh "mkdir artifact"
                     sh "cp -r /var/ossec/* ./artifact/"
+
                 }
                 stash includes: 'artifact/**', name: "ossec-server-artifact"
             }
@@ -104,13 +105,14 @@ def createOssecClientBuild(slave){
                 }
                 unstash "ossec-code"
                 docker.image("centos:7").inside("--user root"){
-                    sh "yum install -y epel-release"
-                    sh "yum install -y make"
-                    sh "yum install -y which bind-utils"
-                    sh "yum groupinstall -y 'Development Tools'"
+
+                    installProtoC()   
+                    installDependencies()
+
                     sh "sed -i\'\' -e 's/USER_INSTALL_TYPE=\"server\"/USER_INSTALL_TYPE=\"agent\"/g' etc/preloaded-vars.conf"
                     sh "sed -i\'\' -e 's/#USER_AGENT_SERVER_NAME=\"ossec-server\"/USER_AGENT_SERVER_NAME=\"ossec-server\"/g' etc/preloaded-vars.conf"
                     sh "sed -i\'\' -e 's/#USER_AGENT_CONFIG_PROFILE=\"generic\"/USER_AGENT_CONFIG_PROFILE=\"generic\"/g' etc/preloaded-vars.conf"
+
                     sh "./install.sh"
                     sh "mkdir artifact"
                     sh "cp -r /var/ossec/* ./artifact/"
@@ -141,4 +143,28 @@ def createVirgildBuild(slave){
 
 def clearContentUnix() {
     sh "rm -fr -- *"
+}
+
+def installDependencies(){
+    sh "yum install -y epel-release"
+    sh "yum install -y make"
+    sh "yum install -y which bind-utils protoc nanopb python-protobuf libsodium"
+    sh "pip install --upgrade protobuf"
+    sh "yum groupinstall -y 'Development Tools'"
+
+    sh "yum install devtoolset-4-gcc*"
+    sh "scl enable devtoolset-4 bash"
+    sh "gcc --version"
+}
+
+def installProtoC () {
+    sh "curl -OL https://github.com/google/protobuf/releases/download/v3.2.0/protoc-3.2.0-linux-x86_64.zip"
+    sh "unzip protoc-3.2.0-linux-x86_64.zip -d protoc3"
+    sh "mv protoc3/bin/* /usr/local/bin/"
+    sh "mv protoc3/include/* /usr/local/include/"
+    sh "chwon root /usr/local/bin/protoc"
+    sh "chwon -R root /usr/local/include/google"
+    // Clean after install
+    sh "rm protoc-3.2.0-linux-x86_64.zip"
+    sh "rm -r protoc3"
 }
