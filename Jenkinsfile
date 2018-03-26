@@ -153,7 +153,7 @@ def installDependencies(){
     sh "yum groupinstall -y 'Development Tools'"
 
     sh "wget http://dl.fedoraproject.org/pub/epel/epel-release-latest-7.noarch.rpm"
-    sh "rpm -ivhy epel-release-latest-7.noarch.rpm"
+    sh "rpm -ivh epel-release-latest-7.noarch.rpm"
     // clean after install
     sh "rm epel-release-latest-7.noarch.rpm"
 
