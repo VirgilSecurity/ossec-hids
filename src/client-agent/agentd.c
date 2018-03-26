@@ -11,9 +11,47 @@
 #include "agentd.h"
 #include "os_net/os_net.h"
 
+#ifdef NOISESOCKET_ENABLED
+#include <uv.h>
+#include <virgil-noisesocket.h>
+
+
+static void on_session_ready(uv_tcp_t *handle, ns_result_t result)
+{
+    printf("Session ready: %s\n", NS_OK == result ? "OK" : "ERROR");
+}
+
+static void on_read(uv_stream_t *stream, ssize_t nread, const uv_buf_t* buf)
+{
+    printf("Ready to read\n");
+}
+
+static int start_noisesocket_agent(const char *identity, const char *password) {
+    vn_client_t *client;
+    uv_loop_t *uv_loop = NULL;
+
+    // Create UV loops
+    uv_loop = uv_default_loop();
+
+    client = vn_client_new(identity, password, uv_loop);
+
+    vn_client_connect(client,
+                  agt->rip[0], // server_addr
+                  atoi(agt->port),
+                  on_session_ready,
+                  on_read);
+
+    uv_run(uv_loop, UV_RUN_DEFAULT);
+
+    vn_client_free(client);
+
+    return 0;
+}
+
+#endif
 
 /* Start the agent daemon */
-void AgentdStart(const char *dir, int uid, int gid, const char *user, const char *group)
+void AgentdStart(const char *dir, int uid, int gid, const char *user, const char *group, int use_noisesocket)
 {
     int rc = 0;
     int maxfd = 0;
@@ -78,6 +116,17 @@ void AgentdStart(const char *dir, int uid, int gid, const char *user, const char
     while (rc < agt->rip_id) {
         verbose("%s: INFO: Server %d: %s", ARGV0, rc+1, agt->rip[rc]);
         rc++;
+    }
+
+    /* Connect to server using Noisesocket*/
+    if (use_noisesocket) {
+        /* Hack for the Demo*/
+        char lhostname[512];
+        memset(lhostname, 0, sizeof(lhostname));
+        gethostname(lhostname, 512 - 1);
+        
+        vn_storage_set_path(dir);
+        start_noisesocket_agent(lhostname, lhostname);
     }
 
     /* Try to connect to the server */

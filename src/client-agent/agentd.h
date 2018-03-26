@@ -13,13 +13,17 @@
 #include "config/config.h"
 #include "config/client-config.h"
 
+#ifndef NOISESOCKET_ENABLED
+#define NOISESOCKET_ENABLED
+#endif
+
 /*** Function Prototypes ***/
 
 /* Client configuration */
 int ClientConf(const char *cfgfile);
 
 /* Agentd init function */
-void AgentdStart(const char *dir, int uid, int gid, const char *user, const char *group) __attribute__((noreturn));
+void AgentdStart(const char *dir, int uid, int gid, const char *user, const char *group, int use_noisesocket) __attribute__((noreturn));
 
 /* Event Forwarder */
 void *EventForward(void);
