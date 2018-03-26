@@ -41,7 +41,10 @@ int main()
 #include <sys/wait.h>
 #include "auth.h"
 #include "os_crypto/md5/md5_op.h"
+
+#ifdef NOISESOCKET_ENABLED
 #include "virgil-noisesocket.h"
+#endif
 
 /* TODO: Pulled this value out of the sky, may or may not be sane */
 #define POOL_SIZE 512

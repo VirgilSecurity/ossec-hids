@@ -40,16 +40,18 @@ void HandleRemote(int position, int uid)
     }
 
     /* Bind TCP */
-    if (logr.proto[position] == IPPROTO_TCP) {
-        if ((logr.sock =
+    if (logr.conn[position] != NOISES_CONN) { // Noisesocket uses libuv
+        if (logr.proto[position] == IPPROTO_TCP) {
+            if ((logr.sock =
                     OS_Bindporttcp(logr.port[position], logr.lip[position])) < 0) {
-            ErrorExit(BIND_ERROR, ARGV0, logr.port[position]);
-        }
-    } else {
-        /* Using UDP. Fast, unreliable... perfect */
-        if((logr.sock =
-                   OS_Bindportudp(logr.port[position], logr.lip[position])) < 0) {
-            ErrorExit(BIND_ERROR, ARGV0, logr.port[position]);
+                ErrorExit(BIND_ERROR, ARGV0, logr.port[position]);
+            }
+        } else {
+            /* Using UDP. Fast, unreliable... perfect */
+            if ((logr.sock =
+                    OS_Bindportudp(logr.port[position], logr.lip[position])) < 0) {
+                ErrorExit(BIND_ERROR, ARGV0, logr.port[position]);
+            }
         }
     }
 
@@ -71,13 +73,10 @@ void HandleRemote(int position, int uid)
         HandleSecure();
     }
 
-    else if (logr.conn[position] == NOISES_CONN)
-    {
-        HandleNoiseTCP();
+    else if (logr.conn[position] == NOISES_CONN) {
+        HandleNoisesocketTCP(atoi(logr.port[position]));
     }
-
-    else if (logr.proto[position] == IPPROTO_TCP)
-    {
+    else if (logr.proto[position] == IPPROTO_TCP) {
         HandleSyslogTCP();
     }
 

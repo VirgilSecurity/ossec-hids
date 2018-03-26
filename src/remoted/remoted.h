@@ -10,6 +10,10 @@
 #ifndef __LOGREMOTE_H
 #define __LOGREMOTE_H
 
+#ifndef NOISESOCKET_ENABLED
+#define NOISESOCKET_ENABLED
+#endif
+
 #ifndef ARGV0
 #define ARGV0 "ossec-remoted"
 #endif
@@ -35,7 +39,7 @@ void HandleSyslogTCP(void) __attribute__((noreturn));
 void HandleSecure(void) __attribute__((noreturn));
 
 /* Handle Noisesocket TCP connections */
-void HandleNoiseTCP(void) __attribute__((noreturn));
+void HandleNoisesocketTCP(int port);
 
 /* Forward active response events */
 void *AR_Forward(void *arg) __attribute__((noreturn));
