@@ -34,6 +34,9 @@ void HandleSyslogTCP(void) __attribute__((noreturn));
 /* Handle Secure connections */
 void HandleSecure(void) __attribute__((noreturn));
 
+/* Handle Noisesocket TCP connections */
+void HandleNoiseTCP(void) __attribute__((noreturn));
+
 /* Forward active response events */
 void *AR_Forward(void *arg) __attribute__((noreturn));
 

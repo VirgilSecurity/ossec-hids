@@ -112,6 +112,8 @@ int Read_Remote(XML_NODE node, void *d1, __attribute__((unused)) void *d2)
                 logr->conn[pl] = SYSLOG_CONN;
             } else if (strcmp(node[i]->content, "secure") == 0) {
                 logr->conn[pl] = SECURE_CONN;
+            } else if (strcmp(node[i]->content, "noisesocket") == 0) {
+                logr->conn[pl] = NOISES_CONN;
             } else {
                 merror(XML_VALUEERR, __local_name, node[i]->element, node[i]->content);
                 return (OS_INVALID);
@@ -194,8 +196,10 @@ int Read_Remote(XML_NODE node, void *d1, __attribute__((unused)) void *d2)
     if (logr->port[pl] == NULL) {
         if (logr->conn[pl] == SECURE_CONN) {
             logr->port[pl] = DEFAULT_SECURE;
-        } else {
+        } else if (logr->conn[pl] == SYSLOG_CONN) {
             logr->port[pl] = DEFAULT_SYSLOG;
+        } else {
+            logr->port[pl] = DEFAULT_NOISES;
         }
     }
 
@@ -207,6 +211,11 @@ int Read_Remote(XML_NODE node, void *d1, __attribute__((unused)) void *d2)
     /* Secure connections only run on UDP */
     if ((logr->conn[pl] == SECURE_CONN) && (logr->proto[pl] == IPPROTO_TCP)) {
         logr->proto[pl] = IPPROTO_UDP;
+    }
+    
+    /* Noisesocket connections only run on TCP */
+    if ((logr->conn[pl] == SECURE_CONN) && (logr->proto[pl] == IPPROTO_UDP)) {
+        logr->proto[pl] = IPPROTO_TCP;
     }
 
     return (0);

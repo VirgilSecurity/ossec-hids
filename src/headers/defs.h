@@ -268,6 +268,10 @@ http://www.ossec.net/main/license/\n"
 #define DEFAULT_SYSLOG "514" /* Default syslog port - udp */
 #endif
 
+#ifndef DEFAULT_NOISES
+#define DEFAULT_NOISES "1516" /* Default noisesocket */
+#endif
+
 /* XML global elements */
 #ifndef xml_global
 #define xml_global "global"

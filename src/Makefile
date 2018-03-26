@@ -5,9 +5,11 @@ uname_S := $(shell sh -c 'uname -s 2>/dev/null || echo not')
 EXTERNAL_JSON=external/cJSON/
 EXTERNAL_LUA=external/lua/
 EXTERNAL_ZLIB=external/zlib-1.2.11/
+EXTERNAL_NOISESOCKET=external/noisesocket/
 ZLIB_SYSTEM?=no
 LUA_PLAT=posix
 LUA_ENABLE?=yes
+NOISESOCKET_ENABLE?=yes
 MAXAGENTS?=2048
 REUSE_ID?=no
 # XXX Becareful NO EXTRA Spaces here
@@ -317,6 +319,38 @@ ifneq (,$(filter ${USE_OPENSSL},yes y Y 1))
 	endif
 endif
 
+# Noisesocket ########### TODO: Simplify it !!!
+ifeq (${NOISESOCKET_ENABLE},yes)
+	DEFINES+=-DNOISESOCKET_ENABLED
+	CFLAGS+=-fno-omit-frame-pointer
+	CFLAGS+=-fsanitize=address
+	CFLAGS+=-I${EXTERNAL_NOISESOCKET}/include
+	CFLAGS+=-I${EXTERNAL_NOISESOCKET}/ext/noisesocket-lib/include
+	CFLAGS+=-I${EXTERNAL_NOISESOCKET}/ext/noisesocket-lib/include/noisesocket
+	OSSEC_LDFLAGS+=-L${EXTERNAL_NOISESOCKET}_build
+	OSSEC_LDFLAGS+=-L${EXTERNAL_NOISESOCKET}_build/ext/noisesocket-lib
+	OSSEC_LDFLAGS+=-L${EXTERNAL_NOISESOCKET}_build/ext/virgil-sdk-cpp
+	OSSEC_LDFLAGS+=-L${EXTERNAL_NOISESOCKET}_build/depends/installed/lib
+	OSSEC_LDFLAGS+=-L${EXTERNAL_NOISESOCKET}_build/ext/noisesocket-lib/src/noise-protocol
+	OSSEC_LDFLAGS+=-lvirgil-noisesocket 
+	OSSEC_LDFLAGS+=-lnoisesocket 
+	OSSEC_LDFLAGS+=-lnoise-protocol 
+	OSSEC_LDFLAGS+=-lvirgil_sdk_d 
+	OSSEC_LDFLAGS+=-lvirgil_crypto_d 
+	OSSEC_LDFLAGS+=-lmbedtls 
+	OSSEC_LDFLAGS+=-lmbedcrypto 
+	OSSEC_LDFLAGS+=-led25519 
+	OSSEC_LDFLAGS+=-lrestless 
+	OSSEC_LDFLAGS+=-lasan 
+	OSSEC_LDFLAGS+=-luv 
+	OSSEC_LDFLAGS+=-lstdc++ 
+	OSSEC_LDFLAGS+=-lm 
+	OSSEC_LDFLAGS+=-lsodium 
+	OSSEC_LDFLAGS+=-lcurl
+	OSSEC_LDFLAGS+=-fno-omit-frame-pointer
+	OSSEC_LDFLAGS+=-fsanitize=address
+endif # NOISESOCKET_ENABLE
+
 ####################
 #### Target ########
 ####################
@@ -525,6 +559,7 @@ help: failtarget
 	@echo
 	@echo "External source options: "
 	@echo "   make LUA_ENABLE=no    Disable LUA build"
+	@echo "   make NOISESOCKET_ENABLE=no    Disable Noisesocket build"
 	@echo "   make ZLIB_SYSTEM=yes  Use zlib sources from system"
 	@echo
 	@echo "Examples: Client with debugging enabled"
@@ -556,6 +591,8 @@ settings:
 	@echo "Lua settings:"
 	@echo "    LUA_PLAT:         ${LUA_PLAT}"
 	@echo "    LUA_ENABLE:       ${LUA_ENABLE}"
+	@echo "Noisesocket settings:"
+	@echo "    NOISESOCKET_ENABLE:       ${NOISESOCKET_ENABLE}"
 	@echo "USE settings:"
 	@echo "    USE_ZEROMQ:       ${USE_ZEROMQ}"
 	@echo "    USE_GEOIP:        ${USE_GEOIP}"
@@ -656,12 +693,17 @@ winagent:
 #### External ######
 ####################
 
-.PHONY: external lua
-external: libcJSON.a ${EXTERNAL_ZLIB}libz.a lua
+.PHONY: external lua noisesocket
+external: libcJSON.a ${EXTERNAL_ZLIB}libz.a lua noisesocket
 
 lua:
 ifeq (${LUA_ENABLE},yes)
 	cd ${EXTERNAL_LUA} && ${MAKE} ${LUA_PLAT}
+endif
+
+noisesocket:
+ifeq (${NOISESOCKET_ENABLE},yes)
+	${EXTERNAL_NOISESOCKET}/scripts/build-debug.sh
 endif
 
 ${EXTERNAL_ZLIB}libz.a:
@@ -1302,6 +1344,7 @@ clean-external:
 	rm -f ${cjson_o} libcJSON.a
 	cd ${EXTERNAL_ZLIB} && ${MAKE} -f Makefile.in distclean
 	cd ${EXTERNAL_LUA} && ${MAKE} clean
+#	${EXTERNAL_NOISESOCKET}/scripts/clean.sh?
 
 
 clean-internals:

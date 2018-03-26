@@ -5,6 +5,7 @@
 .DS_Store
 *.dll
 *.exe
+*.dat
 
 # Auto generated build files
 src/LOCATION
@@ -54,6 +55,9 @@ src/verify-agent-conf
 .cproject
 .project
 .settings/
+
+# Netbeans files
+nbproject/
 
 # temporary vim files
 *.swp
