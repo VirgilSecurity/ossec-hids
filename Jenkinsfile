@@ -152,7 +152,7 @@ def installDependencies(){
     sh "pip install --upgrade protobuf"
     sh "yum groupinstall -y 'Development Tools'"
 
-    sh "yum install devtoolset-4-gcc*"
+    sh "yum install -y devtoolset-4-gcc*"
     sh "scl enable devtoolset-4 bash"
     sh "gcc --version"
 }
