@@ -156,12 +156,9 @@ def installDependencies(){
     
     // Install cmake
     sh "wget https://cmake.org/files/v3.10/cmake-3.10.3-Linux-x86_64.sh"
-    sh "chmod +x ./cmake-3.10.3-Linux-x86_64.sh && ./cmake-3.10.3-Linux-x86_64.sh --skip-license && rm -f ./cmake-3.10.3-Linux-x86_64.sh"
-
-    //DEBUG
-    echo "$PATH"
-    sh "ls -l /usr/bin"
-
+    sh "mkdir /opt/cmake"
+    sh "chmod +x ./cmake-3.10.3-Linux-x86_64.sh && ./cmake-3.10.3-Linux-x86_64.sh --prefix=/opt/cmake --skip-license && rm -f ./cmake-3.10.3-Linux-x86_64.sh"
+    sh "ln -s /opt/cmake/bin/cmake /usr/bin/cmake"
     sh "cmake -version"
 
     useV4DevToolSet("gcc --version")
