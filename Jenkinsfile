@@ -148,11 +148,13 @@ def clearContentUnix() {
 def installDependencies(){
     sh "yum install -y epel-release"
     sh "yum install -y centos-release-scl"
-    sh "yum install -y make which bind-utils protoc nanopb python-protobuf libsodium unzip python-pip"
+    sh "yum install -y make which bind-utils protoc nanopb python-protobuf libsodium unzip python-pip wget"
     sh "pip install --upgrade protobuf"
     sh "yum groupinstall -y 'Development Tools'"
 
     sh "yum install -y devtoolset-4-gcc*"
+    sh "wget https://cmake.org/files/v3.11/cmake-3.11.0-rc4-Linux-x86_64.sh"
+    sh "chmod +x ./cmake-3.11.0-rc4-Linux-x86_64.sh && ./cmake-3.11.0-rc4-Linux-x86_64.sh && rm ./cmake-3.11.0-rc4-Linux-x86_64.sh"
     useV4DevToolSet("gcc --version")
 }
 
