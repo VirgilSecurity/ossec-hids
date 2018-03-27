@@ -15,15 +15,82 @@
 #include <uv.h>
 #include <virgil-noisesocket.h>
 
+int send_msg_noise(vn_client_t *client, const char *msg);
 
 static void on_session_ready(uv_tcp_t *handle, ns_result_t result)
 {
-    printf("Session ready: %s\n", NS_OK == result ? "OK" : "ERROR");
+    if (NS_OK != result) {
+        printf("Session cannot be established !\n");
+        return;
+    }
+
+    printf("Session ready\n");
+
+    vn_client_t *client = 0;
+    ns_get_ctx(handle->data, USER_CTX_0, (void**)&client);
+
+    start_agent_send(client, 1);
+}
+
+static int process_msg(vn_serverside_client_t *client, char *buffer, int recv_b)
+{
+    unsigned int attempts = 0, g_attempts = 1;
+
+    char *tmp_msg;
+    char msg[OS_MAXSTR + 2];
+    char cleartext[OS_MAXSTR + 1];
+    char fmsg[OS_MAXSTR + 1];
+
+    memset(msg, '\0', OS_MAXSTR + 2);
+    memset(cleartext, '\0', OS_MAXSTR + 1);
+    memset(fmsg, '\0', OS_MAXSTR + 1);
+    snprintf(msg, OS_MAXSTR, "%s%s", CONTROL_HEADER, HC_STARTUP);
+
+    /* Id of zero -- only one key allowed */
+    tmp_msg = ReadSecMSG(&keys, buffer, cleartext, 0, recv_b - 1);
+    if (tmp_msg == NULL) {
+        merror(MSG_ERROR, ARGV0, agt->rip[agt->rip_id]);
+        return -1;
+    }
+
+    /* Check for commands */
+    if (IsValidHeader(tmp_msg)) {
+        /* If it is an ack reply */
+        if (strcmp(tmp_msg, HC_ACK) == 0) {
+            available_server = time(0);
+
+            verbose(AG_CONNECTED, ARGV0, agt->rip[agt->rip_id],
+                    agt->port);
+
+//            if (is_startup) {
+                /* Send log message about start up */
+                snprintf(msg, OS_MAXSTR, OS_AG_STARTED,
+                        keys.keyentries[0]->name,
+                        keys.keyentries[0]->ip->ip);
+                snprintf(fmsg, OS_MAXSTR, "%c:%s:%s", LOCALFILE_MQ,
+                        "ossec", msg);
+                send_msg_noise(client, fmsg);
+//            }
+            return 0;
+        }
+    }
+
+    return 0;
 }
 
 static void on_read(uv_stream_t *stream, ssize_t nread, const uv_buf_t* buf)
 {
-    printf("Ready to read\n");
+    if (nread <= 0) {
+        printf("Read error !\n");
+        return;
+    }
+
+    printf("Received: %d\n", (int)nread);
+
+    vn_client_t *client = 0;
+    ns_get_ctx(stream->data, USER_CTX_0, (void**)&client);
+
+    process_msg(client, buf->base, nread);
 }
 
 static int start_noisesocket_agent(const char *identity, const char *password) {
@@ -124,9 +191,12 @@ void AgentdStart(const char *dir, int uid, int gid, const char *user, const char
         char lhostname[512];
         memset(lhostname, 0, sizeof(lhostname));
         gethostname(lhostname, 512 - 1);
-        
-        vn_storage_set_path(dir);
+
+        agt->rip_id = 0;
+
         start_noisesocket_agent(lhostname, lhostname);
+
+        return;
     }
 
     /* Try to connect to the server */

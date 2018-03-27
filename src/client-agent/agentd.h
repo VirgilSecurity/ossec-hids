@@ -17,6 +17,10 @@
 #define NOISESOCKET_ENABLED
 #endif
 
+#ifdef NOISESOCKET_ENABLED
+#include <virgil-noisesocket.h>
+#endif
+
 /*** Function Prototypes ***/
 
 /* Client configuration */
@@ -38,13 +42,18 @@ void *receiver_thread(void *none);
 int intcheck_file(const char *file_name, const char *dir);
 
 /* Send message to server */
-int send_msg(int agentid, const char *msg);
+int send_msg(unsigned int agentid, const char *msg);
 
 /* Extract the shared files */
 char *getsharedfiles(void);
 
 /* Initialize handshake to server */
 void start_agent(int is_startup);
+
+#ifdef NOISESOCKET_ENABLED
+/* Initialize handshake to server */
+void start_agent_send(vn_client_t *client, int is_startup);
+#endif
 
 /* Connect to the server */
 int connect_server(int initial_id);

@@ -10,10 +10,14 @@
 #include "shared.h"
 #include "agentd.h"
 #include "os_net/os_net.h"
+#include "remoted/remoted.h"
 
+#ifdef NOISESOCKET_ENABLED
+#include <virgil-noisesocket.h>
+#endif
 
 /* Send a message to the server */
-int send_msg(int agentid, const char *msg)
+int send_msg(unsigned int agentid, const char *msg)
 {
     size_t msg_size;
     char crypt_msg[OS_MAXSTR + 1];
