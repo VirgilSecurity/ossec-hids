@@ -148,7 +148,7 @@ def clearContentUnix() {
 def installDependencies(){
     sh "yum install -y epel-release"
     sh "yum install -y centos-release-scl"
-    sh "yum install -y make which bind-utils protoc nanopb python-protobuf libsodium libsodium-devel libuv-static unzip python-pip wget libcurl libcurl-devel"
+    sh "yum install -y make which bind-utils protoc nanopb python-protobuf libsodium libsodium-devel libuv-static unzip python-pip wget libcurl libcurl-devel libuv-devel zlib-devel bzip2-devel openssl-devel ncurses-devel sqlite-devel readline-devel tk-devel gdbm-devel db4-devel libpcap-devel xz-devel expat-devel libasan"
     sh "pip install --upgrade protobuf"
     sh "yum groupinstall -y 'Development Tools'"
 
