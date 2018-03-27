@@ -152,7 +152,7 @@ def installDependencies(){
     sh "pip install --upgrade protobuf"
     sh "yum groupinstall -y 'Development Tools'"
 
-    sh "yum install -y devtoolset-4-gcc*"
+    sh "yum install -y devtoolset-4-gcc* devtoolset-4-libasan-devel"
     
     // Install cmake
     sh "wget https://cmake.org/files/v3.10/cmake-3.10.3-Linux-x86_64.sh"
