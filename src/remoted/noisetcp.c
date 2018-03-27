@@ -209,6 +209,7 @@ void HandleNoisesocketTCP(int port)
                            on_client_accepted,
                            on_client_disconnected,
                            on_client_received);
+    vn_server_block_registration(server, true);
     vn_server_start(server);
     uv_run(uv_loop, UV_RUN_DEFAULT);
 
