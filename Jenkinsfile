@@ -85,7 +85,7 @@ def createOssecServerBuild(slave){
                     installDependencies()
                     installProtoC()
                     
-                    sh "./install.sh"
+                    useV4DevToolSet("./install.sh")
                     sh "mkdir artifact"
                     sh "cp -r /var/ossec/* ./artifact/"
 
@@ -113,7 +113,7 @@ def createOssecClientBuild(slave){
                     sh "sed -i\'\' -e 's/#USER_AGENT_SERVER_NAME=\"ossec-server\"/USER_AGENT_SERVER_NAME=\"ossec-server\"/g' etc/preloaded-vars.conf"
                     sh "sed -i\'\' -e 's/#USER_AGENT_CONFIG_PROFILE=\"generic\"/USER_AGENT_CONFIG_PROFILE=\"generic\"/g' etc/preloaded-vars.conf"
 
-                    sh "./install.sh"
+                    useV4DevToolSet("./install.sh")
                     sh "mkdir artifact"
                     sh "cp -r /var/ossec/* ./artifact/"
                 }
@@ -153,8 +153,11 @@ def installDependencies(){
     sh "yum groupinstall -y 'Development Tools'"
 
     sh "yum install -y devtoolset-4-gcc*"
-    sh "scl enable devtoolset-4 bash"
-    sh "gcc --version"
+    useV4DevToolSet("gcc --version")
+}
+
+def useV4DevToolSet(command) {
+    sh "scl enable devtoolset-4 \"$command\""
 }
 
 def installProtoC () {
