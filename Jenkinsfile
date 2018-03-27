@@ -21,9 +21,9 @@ stage("Get code"){
 
 stage("Build"){
     def slaves = [:]
-    // slaves["ossec-server-builder"] = createOssecServerBuild("build-docker")
-    slaves["ossec-client-builder"] = createOssecClientBuild("build-docker")
-    // slaves["virgild-builder"] = createVirgildBuild("build-docker")
+    slaves["ossec-server-builder"] = createOssecServerBuild("build-docker")
+    // slaves["ossec-client-builder"] = createOssecClientBuild("build-docker")
+    slaves["virgild-builder"] = createVirgildBuild("build-docker")
     parallel slaves
 }
 
