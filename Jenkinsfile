@@ -156,17 +156,17 @@ def installDependencies(){
     useV4DevToolSet("gcc --version")
 }
 
-def useV4DevToolSet(command) {
+def useV4DevToolSet(command){
     sh "scl enable devtoolset-4 \"$command\""
 }
 
-def installProtoC () {
+def installProtoC(){
     sh "curl -OL https://github.com/google/protobuf/releases/download/v3.2.0/protoc-3.2.0-linux-x86_64.zip"
     sh "unzip protoc-3.2.0-linux-x86_64.zip -d protoc3"
     sh "mv protoc3/bin/* /usr/local/bin/"
     sh "mv protoc3/include/* /usr/local/include/"
-    sh "chwon root /usr/local/bin/protoc"
-    sh "chwon -R root /usr/local/include/google"
+    sh "chown root /usr/local/bin/protoc"
+    sh "chown -R root /usr/local/include/google"
     // Clean after install
     sh "rm protoc-3.2.0-linux-x86_64.zip"
     sh "rm -r protoc3"
