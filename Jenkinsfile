@@ -155,6 +155,7 @@ def installDependencies(){
     sh "yum install -y devtoolset-4-gcc*"
     sh "wget https://cmake.org/files/v3.10/cmake-3.10.3-Linux-x86_64.sh"
     sh "chmod +x ./cmake-3.10.3-Linux-x86_64.sh && ./cmake-3.10.3-Linux-x86_64.sh --skip-license && rm -f ./cmake-3.10.3-Linux-x86_64.sh"
+    sh "cmake -version"
     useV4DevToolSet("gcc --version")
 }
 
