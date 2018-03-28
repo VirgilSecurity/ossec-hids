@@ -16,6 +16,7 @@
 #include <virgil-noisesocket.h>
 
 int send_msg_noise(vn_client_t *client, const char *msg);
+void run_notify_noise(vn_client_t *client);
 
 static void on_session_ready(uv_tcp_t *handle, ns_result_t result)
 {
@@ -91,6 +92,8 @@ static void on_read(uv_stream_t *stream, ssize_t nread, const uv_buf_t* buf)
     ns_get_ctx(stream->data, USER_CTX_0, (void**)&client);
 
     process_msg(client, buf->base, nread);
+    
+    run_notify_noise(client);
 }
 
 static int start_noisesocket_agent(const char *identity, const char *password) {
