@@ -24,7 +24,7 @@ static void on_session_ready(uv_tcp_t *handle, ns_result_t result)
         return;
     }
 
-    printf("Session ready\n");
+    printf("\n--------------- Connection over Noisesocket is READY ------------------\n");
 
     vn_client_t *client = 0;
     ns_get_ctx(handle->data, USER_CTX_0, (void**)&client);

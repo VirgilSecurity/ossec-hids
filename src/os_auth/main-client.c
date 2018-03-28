@@ -178,6 +178,8 @@ static int process_response(char *data, int data_sz, void *noisesocket) {
             // Save Card ID
             vn_client_t *client;
             client = vn_client_from_socket((uv_tcp_t*)noisesocket);
+
+            printf("--------------- Save Virgil Card ID ---------------\n");
             if (VN_OK != vn_client_save_card_id(client, card_id)) {
                 printf("ERROR: Cannot save Card ID. Closing connection.\n");
                 return RES_KEY_SAVE_ERROR;
