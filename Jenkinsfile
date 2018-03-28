@@ -19,12 +19,16 @@ stage("Get code"){
     }
 }
 
-stage("Build"){
-    def slaves = [:]
-    slaves["ossec-server-builder"] = createOssecServerBuild("build-docker")
-    slaves["ossec-client-builder"] = createOssecClientBuild("build-docker")
-    slaves["virgild-builder"] = createVirgildBuild("build-docker")
-    parallel slaves
+stage("Build Server"){
+    createOssecServerBuild("build-docker")
+}
+
+stage("Build Agent"){
+    createOssecClientBuild("build-docker")
+}
+
+stage("Build VirgilD"){
+    createVirgildBuild("build-docker")
 }
 
 stage("Create Server Docker image"){
