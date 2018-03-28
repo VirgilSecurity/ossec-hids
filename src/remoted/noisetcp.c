@@ -118,18 +118,17 @@ static int process_agent_request(vn_serverside_client_t *client, char *buffer, i
 
 static void on_client_accepted(vn_serverside_client_t *ctx)
 {
-    printf("           SERVER: New client is connected %s\n", ctx->ip);
+    printf("\n-------------- NEW CONNECTION: %s -----------------\n", ctx->ip);
 }
 
 static void on_client_disconnected(vn_serverside_client_t *ctx)
 {
-    printf("           SERVER: Client is disconnected %s\n", ctx->ip);
+    printf("\n--------------- DISCONNECTED : %s -----------------\n", ctx->ip);
 }
 
 static void on_client_received(vn_serverside_client_t *client, uint8_t *data, size_t data_sz)
 {
-    data[data_sz] = 0;
-    printf("           SERVER: Data received from client %s data: <%s>\n", client->ip, data);
+    printf("Data received from client %s data: %d bytes\n", client->ip, data_sz);
     process_agent_request(client, (char*)data, data_sz);
 }
 
