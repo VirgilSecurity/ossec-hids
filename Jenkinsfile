@@ -19,22 +19,10 @@ stage("Get code"){
     }
 }
 
-stage("Build Server"){
-    def slaves = [:]
-    slaves["ossec-server-builder"] = createOssecServerBuild("build-docker")
-    parallel slaves
-}
-
-stage("Build Agent"){
-    def slaves = [:]
-    slaves["ossec-client-builder"] = createOssecClientBuild("build-docker")
-    parallel slaves
-}
-
-stage("Build VirgilD"){
-    def slaves = [:]
-    slaves["virgild-builder"] = createVirgildBuild("build-docker")
-    parallel slaves
+stage("Build"){
+    createOssecServerBuild("build-docker")
+    createOssecClientBuild("build-docker")
+    createVirgildBuild("build-docker")
 }
 
 stage("Create Server Docker image"){
@@ -83,68 +71,62 @@ stage("Create Client Docker image"){
 
 
 def createOssecServerBuild(slave){
-    return {
-        node(slave){
-            ws {
-                docker.image("centos:7").inside("--user root"){
-                    clearContentUnix()
-                }
-                unstash "ossec-code"
-                docker.image("centos:7").inside("--user root"){
-                    
-                    installDependencies()
-                    installProtoC()
-                    
-                    useV4DevToolSet("./install.sh")
-                    sh "mkdir artifact"
-                    sh "cp -r /var/ossec/* ./artifact/"
-
-                }
-                stash includes: 'artifact/**', name: "ossec-server-artifact"
+    node(slave){
+        ws {
+            docker.image("centos:7").inside("--user root"){
+                clearContentUnix()
             }
+            unstash "ossec-code"
+            docker.image("centos:7").inside("--user root"){
+                
+                installDependencies()
+                installProtoC()
+                
+                useV4DevToolSet("./install.sh")
+                sh "mkdir artifact"
+                sh "cp -r /var/ossec/* ./artifact/"
+
+            }
+            stash includes: 'artifact/**', name: "ossec-server-artifact"
         }
     }
 }
 
 def createOssecClientBuild(slave){
-    return {
-        node(slave){
-            ws {
-                docker.image("centos:7").inside("--user root"){
-                    clearContentUnix()
-                }
-                unstash "ossec-code"
-                docker.image("centos:7").inside("--user root"){
-
-                    installDependencies()
-                    installProtoC()
-
-                    sh "sed -i\'\' -e 's/USER_INSTALL_TYPE=\"server\"/USER_INSTALL_TYPE=\"agent\"/g' etc/preloaded-vars.conf"
-                    sh "sed -i\'\' -e 's/#USER_AGENT_SERVER_NAME=\"ossec-server\"/USER_AGENT_SERVER_NAME=\"ossec-server\"/g' etc/preloaded-vars.conf"
-                    sh "sed -i\'\' -e 's/#USER_AGENT_CONFIG_PROFILE=\"generic\"/USER_AGENT_CONFIG_PROFILE=\"generic\"/g' etc/preloaded-vars.conf"
-
-                    useV4DevToolSet("./install.sh")
-                    sh "mkdir artifact"
-                    sh "cp -r /var/ossec/* ./artifact/"
-                }
-                stash includes: 'artifact/**', name: "ossec-agent-artifact"
+    node(slave){
+        ws {
+            docker.image("centos:7").inside("--user root"){
+                clearContentUnix()
             }
+            unstash "ossec-code"
+            docker.image("centos:7").inside("--user root"){
+
+                installDependencies()
+                installProtoC()
+
+                sh "sed -i\'\' -e 's/USER_INSTALL_TYPE=\"server\"/USER_INSTALL_TYPE=\"agent\"/g' etc/preloaded-vars.conf"
+                sh "sed -i\'\' -e 's/#USER_AGENT_SERVER_NAME=\"ossec-server\"/USER_AGENT_SERVER_NAME=\"ossec-server\"/g' etc/preloaded-vars.conf"
+                sh "sed -i\'\' -e 's/#USER_AGENT_CONFIG_PROFILE=\"generic\"/USER_AGENT_CONFIG_PROFILE=\"generic\"/g' etc/preloaded-vars.conf"
+
+                useV4DevToolSet("./install.sh")
+                sh "mkdir artifact"
+                sh "cp -r /var/ossec/* ./artifact/"
+            }
+            stash includes: 'artifact/**', name: "ossec-agent-artifact"
         }
     }
 }
 
 def createVirgildBuild(slave){
-    return {
-        node(slave){
-            ws {
-                docker.image("centos:7").inside("--user root"){
-                    clearContentUnix()
-                }
-                unstash "virgild-code"
-                sh "sed -i\'\' -e 's/-it/-i/g' Makefile"
-                sh "make build_in_docker-env"
-                stash includes: 'virgild', name: "virgild-artifact"
+    node(slave){
+        ws {
+            docker.image("centos:7").inside("--user root"){
+                clearContentUnix()
             }
+            unstash "virgild-code"
+            sh "sed -i\'\' -e 's/-it/-i/g' Makefile"
+            sh "make build_in_docker-env"
+            stash includes: 'virgild', name: "virgild-artifact"
         }
     }
 }
