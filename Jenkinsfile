@@ -71,14 +71,10 @@ stage("Create Client Docker image"){
 
 stage("Publish images"){
     node("build-docker"){
-        // DEBUG
-        echo "Debug branch name"
         echo env.BRANCH_NAME
         def BRANCH_NAME = env.BRANCH_NAME
-        echo "${BRANCH_NAME}"
-        echo "End Deubg"
         
-        withCredentials([string(credentialsId: 'REGISTRY_PASSWORD', variable: 'REGISTRY_PASSWORD'), string(credentialsId: 'REGISTRY_USERNAME', variable: 'REGISTRY_USERNAME')]) {
+        withCredentials([string(credentialsId: 'REGISTRY_PASSWORD', variable: 'REGISTRY_PASSWORD'), string(credentialsId: 'REGISTRY_USER', variable: 'REGISTRY_USERNAME')]) {
             sh "docker tag ossec-server virgilsecurity/ossec-server:${BRANCH_NAME}"
             sh "docker tag ossec-client virgilsecurity/ossec-client:${BRANCH_NAME}"
             sh "docker login -u ${REGISTRY_USER} -p ${REGISTRY_PASSWORD} && docker push virgilsecurity/ossec-server:${BRANCH_NAME} && docker push virgilsecurity/ossec-client:${BRANCH_NAME}"
