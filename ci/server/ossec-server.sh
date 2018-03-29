@@ -85,3 +85,5 @@ fi
 
 # Return startup events to console
 tail -f /var/ossec/logs/ossec.log
+
+while true; do sleep 1000; done
