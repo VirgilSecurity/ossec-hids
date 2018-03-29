@@ -37,6 +37,8 @@ stage("Create Server Docker image"){
                 // DEBUG
                 sh "ls -l ./artifact/bin"
             }
+            // DEBUG
+            sh "ls -l"
 
             sh "mkdir virgild-artifact"
             dir("virgild-artifact"){
