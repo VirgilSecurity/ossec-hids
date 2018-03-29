@@ -36,6 +36,7 @@ stage("Create Server Docker image"){
             dir('ossec-server-artifact'){
                 unstash "ossec-server-artifact"
                 // DEBUG
+                sh "ls -l"
                 sh "tree ./artifact"
             }
 
