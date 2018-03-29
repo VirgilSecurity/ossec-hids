@@ -34,7 +34,7 @@ RUN chmod 755 /ossec-server.sh
 VOLUME ["/var/ossec/data"]
 
 # Expose ports for sharing
-EXPOSE 1514/udp 1515/tcp
+EXPOSE 1514/udp 1515/tcp 1516/tcp
 
 #
 # Define default command.
