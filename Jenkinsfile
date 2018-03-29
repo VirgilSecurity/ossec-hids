@@ -75,7 +75,7 @@ stage("Publish images"){
         echo "Debug branch name"
         echo env.BRANCH_NAME
         def BRANCH_NAME = env.BRANCH_NAME
-        echo $BRANCH_NAME
+        echo "${BRANCH_NAME}"
         echo "End Deubg"
         
         withCredentials([string(credentialsId: 'REGISTRY_PASSWORD', variable: 'REGISTRY_PASSWORD'), string(credentialsId: 'REGISTRY_USERNAME', variable: 'REGISTRY_USERNAME')]) {
