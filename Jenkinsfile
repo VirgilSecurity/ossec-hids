@@ -96,7 +96,7 @@ def createOssecServerBuild(slave){
                 
                 useV4DevToolSet("./install.sh")
                 sh "mkdir artifact"
-                sh "cp -r /var/ossec/* ./artifact/"
+                sh "mv /var/ossec/* ./artifact/"
 
             }
             stash includes: 'artifact/**', name: "ossec-server-artifact"
@@ -122,7 +122,7 @@ def createOssecClientBuild(slave){
 
                 useV4DevToolSet("./install.sh")
                 sh "mkdir artifact"
-                sh "cp -r /var/ossec/* ./artifact/"
+                sh "mv /var/ossec/* ./artifact/"
             }
             stash includes: 'artifact/**', name: "ossec-agent-artifact"
         }
