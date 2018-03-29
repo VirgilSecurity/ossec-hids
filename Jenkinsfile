@@ -32,13 +32,17 @@ stage("Create Server Docker image"){
                 clearContentUnix()
             }
 
-            unstash "ossec-server-artifact"
-            unstash "virgild-artifact"
+            sh 'mkdir ossec-server-artifact'
+            dir('ossec-server-artifact'){
+                unstash "ossec-server-artifact"
+                // DEBUG
+                sh "tree ./artifact"
+            }
 
-            // DEBUG
-            sh "ls -l"
-            sh "tree ./ossec-server-artifact"
-            sh "tree ./virgild-artifact"
+            sh "mkdir virgild-artifact"
+            dir("virgild-artifact"){
+                unstash "virgild-artifact"
+            }
 
             unstash "ossec-server-docker-files"
             unstash "ossec-ci-server"
@@ -105,7 +109,7 @@ def createOssecServerBuild(slave){
                 sh "tree ./artifact"
 
             }
-            stash includes: 'artifact/**', name: "ossec-server-artifact"
+            stash includes: '**/artifact/*', name: "ossec-server-artifact"
         }
     }
 }
