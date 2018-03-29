@@ -104,6 +104,7 @@ def createOssecServerBuild(slave){
                 // DEBUG
                 sh "tree /var/ossec"
                 sh "mv /var/ossec/* ./artifact/"
+                sh "chmod -R 777 ./artifact"
                 // DEBUG
                 sh "ls -l"
                 sh "ls -l ./artifact"
