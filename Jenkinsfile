@@ -34,10 +34,15 @@ stage("Create Server Docker image"){
 
             unstash "ossec-server-artifact"
             unstash "virgild-artifact"
+            
             // DEBUG
             sh "ls -l"
-            sh "tree ./ossec-server-artifact"
-            sh "tree ./virgild-artifact"
+            docker.image("centos:7").inside("--user root"){
+                sh "yum install -y epel-release"
+                sh "yum install -y tree"
+                sh "tree ./ossec-server-artifact"
+                sh "tree ./virgild-artifact"
+            }
 
             unstash "ossec-server-docker-files"
             unstash "ossec-ci-server"
