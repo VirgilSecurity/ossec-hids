@@ -34,6 +34,8 @@ stage("Create Server Docker image"){
             sh 'mkdir ossec-server-artifact'
             dir('ossec-server-artifact'){
                 unstash "ossec-server-artifact"
+                // DEBUG
+                sh "ls -l ./artifact/bin"
             }
 
             sh "mkdir virgild-artifact"
@@ -60,6 +62,8 @@ stage("Create Client Docker image"){
         sh 'mkdir ossec-agent-artifact'
         dir('ossec-agent-artifact'){
             unstash "ossec-agent-artifact"
+            // DEBUG
+            sh "ls -l ./artifact/bin"
         }
 
         unstash "ossec-ci-client"
@@ -96,7 +100,10 @@ def createOssecServerBuild(slave){
                 
                 useV4DevToolSet("./install.sh")
                 sh "mkdir artifact"
+                // DEBUG
+                sh "tree /var/ossec"
                 sh "mv /var/ossec/* ./artifact/"
+                sh "tree ./artifact"
 
             }
             stash includes: 'artifact/**', name: "ossec-server-artifact"
@@ -122,7 +129,10 @@ def createOssecClientBuild(slave){
 
                 useV4DevToolSet("./install.sh")
                 sh "mkdir artifact"
+                // DEBUG
+                sh "tree /var/ossec"
                 sh "mv /var/ossec/* ./artifact/"
+                sh "tree ./atrifact"
             }
             stash includes: 'artifact/**', name: "ossec-agent-artifact"
         }
@@ -152,7 +162,7 @@ def clearContentUnix() {
 def installDependencies(){
     sh "yum install -y epel-release"
     sh "yum install -y centos-release-scl"
-    sh "yum install -y make which bind-utils protoc nanopb python-protobuf libsodium libsodium-devel libuv-static unzip python-pip wget libcurl libcurl-devel libuv-devel zlib-devel bzip2-devel openssl-devel ncurses-devel sqlite-devel readline-devel tk-devel gdbm-devel db4-devel libpcap-devel xz-devel expat-devel libasan"
+    sh "yum install -y tree make which bind-utils protoc nanopb python-protobuf libsodium libsodium-devel libuv-static unzip python-pip wget libcurl libcurl-devel libuv-devel zlib-devel bzip2-devel openssl-devel ncurses-devel sqlite-devel readline-devel tk-devel gdbm-devel db4-devel libpcap-devel xz-devel expat-devel libasan"
     sh "pip install --upgrade protobuf"
     sh "yum groupinstall -y 'Development Tools'"
 
