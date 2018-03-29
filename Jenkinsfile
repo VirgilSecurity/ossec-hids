@@ -96,6 +96,8 @@ def createOssecServerBuild(slave){
                 
                 useV4DevToolSet("./install.sh")
                 sh "mkdir artifact"
+                // DEBUG
+                sh "tree /var/ossec"
                 sh "cp -r /var/ossec/* ./artifact/"
 
             }
@@ -122,6 +124,8 @@ def createOssecClientBuild(slave){
 
                 useV4DevToolSet("./install.sh")
                 sh "mkdir artifact"
+                // DEBUG
+                sh "tree /var/ossec"
                 sh "cp -r /var/ossec/* ./artifact/"
             }
             stash includes: 'artifact/**', name: "ossec-agent-artifact"
@@ -152,7 +156,7 @@ def clearContentUnix() {
 def installDependencies(){
     sh "yum install -y epel-release"
     sh "yum install -y centos-release-scl"
-    sh "yum install -y make which bind-utils protoc nanopb python-protobuf libsodium libsodium-devel libuv-static unzip python-pip wget libcurl libcurl-devel libuv-devel zlib-devel bzip2-devel openssl-devel ncurses-devel sqlite-devel readline-devel tk-devel gdbm-devel db4-devel libpcap-devel xz-devel expat-devel libasan"
+    sh "yum install -y tree make which bind-utils protoc nanopb python-protobuf libsodium libsodium-devel libuv-static unzip python-pip wget libcurl libcurl-devel libuv-devel zlib-devel bzip2-devel openssl-devel ncurses-devel sqlite-devel readline-devel tk-devel gdbm-devel db4-devel libpcap-devel xz-devel expat-devel libasan"
     sh "pip install --upgrade protobuf"
     sh "yum groupinstall -y 'Development Tools'"
 
