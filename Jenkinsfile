@@ -72,6 +72,7 @@ stage("Create Client Docker image"){
 stage("Publish images"){
     node("build-docker"){
         // DEBUG
+        BRANCH_NAME = env.BRANCH_NAME
         echo $BRANCH_NAME
         
         withCredentials([string(credentialsId: 'REGISTRY_PASSWORD', variable: 'REGISTRY_PASSWORD'), string(credentialsId: 'REGISTRY_USERNAME', variable: 'REGISTRY_USERNAME')]) {
