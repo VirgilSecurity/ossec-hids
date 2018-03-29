@@ -114,7 +114,7 @@ def createOssecServerBuild(slave){
             sh "ls -l"
             sh "ls -l ./artifact"
             sh "tree ./artifact"
-            stash includes: 'artifact/*', name: "ossec-server-artifact"
+            stash includes: 'artifact/**', name: "ossec-server-artifact"
         }
     }
 }
