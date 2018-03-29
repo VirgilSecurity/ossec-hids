@@ -80,7 +80,7 @@ fi
 
 # Start services
 /usr/sbin/postfix start
-/opt/virgild -mode=local -db=/var/ossec/data/virgild.db
+/opt/virgild -mode=local -db=sqlite3:/var/ossec/data/virgild.db
 /var/ossec/bin/ossec-control start
 
 # Return startup events to console
