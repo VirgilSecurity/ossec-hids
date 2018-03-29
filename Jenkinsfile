@@ -21,6 +21,7 @@ stage("Get code"){
 
 stage("Build"){
     createOssecServerBuild("build-docker")
+    // createOssecClientBuild("build-docker")
     createVirgildBuild("build-docker")
 }
 
@@ -51,6 +52,25 @@ stage("Create Server Docker image"){
     }
 }
 
+// stage("Create Client Docker image"){
+//     node("build-docker"){
+
+//         docker.image("centos:7").inside("--user root"){
+//             clearContentUnix()
+//         }
+
+//         sh 'mkdir ossec-agent-artifact'
+//         dir('ossec-agent-artifact'){
+//             unstash "ossec-agent-artifact"
+//         }
+
+//         unstash "ossec-ci-client"
+//         sh "mv ci/client/* ./"
+
+//         sh "docker build -t ossec-client ."
+//     }
+// }
+
 stage("Publish images"){
     node("build-docker"){
         echo env.BRANCH_NAME
@@ -58,6 +78,8 @@ stage("Publish images"){
         
         withCredentials([string(credentialsId: 'REGISTRY_PASSWORD', variable: 'REGISTRY_PASSWORD'), string(credentialsId: 'REGISTRY_USER', variable: 'REGISTRY_USERNAME')]) {
             sh "docker tag ossec-server virgilsecurity/ossec-server:${BRANCH_NAME}"
+            // sh "docker tag ossec-client virgilsecurity/ossec-client:${BRANCH_NAME}"
+            // sh "docker login -u ${REGISTRY_USERNAME} -p ${REGISTRY_PASSWORD} && docker push virgilsecurity/ossec-server:${BRANCH_NAME} && docker push virgilsecurity/ossec-client:${BRANCH_NAME}"
             sh "docker login -u ${REGISTRY_USERNAME} -p ${REGISTRY_PASSWORD} && docker push virgilsecurity/ossec-server:${BRANCH_NAME}"
         }
     }
@@ -80,6 +102,9 @@ def createOssecServerBuild(slave){
                 // DEBUG
                 sh "tree /var/ossec"
                 sh "mv /var/ossec/* ./artifact/"
+                // DEBUG
+                sh "ls -l"
+                sh "ls -l ./artifact"
                 sh "tree ./artifact"
 
             }
@@ -106,10 +131,7 @@ def createOssecClientBuild(slave){
 
                 useV4DevToolSet("./install.sh")
                 sh "mkdir artifact"
-                // DEBUG
-                sh "tree /var/ossec"
                 sh "mv /var/ossec/* ./artifact/"
-                sh "tree ./atrifact"
             }
             stash includes: 'artifact/**', name: "ossec-agent-artifact"
         }
