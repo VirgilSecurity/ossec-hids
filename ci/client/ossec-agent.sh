@@ -24,7 +24,7 @@ trap "ossec_shutdown; exit" SIGINT SIGTERM
 fix_access_to_random
 
 # Start services
-/var/ossec/bin/agent-auth -m OssecServ
+/var/ossec/bin/agent-auth -N -d -d -d -p 1516 -m OssecServ
 sleep 10
 /etc/init.d/ossec start
 
