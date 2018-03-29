@@ -5,6 +5,7 @@
 # variables expected by this script.
 #
 FIRST_TIME_INSTALLATION=false
+BASE_PATH=/var/ossec
 DATA_PATH=/var/ossec/data
 
 DATA_DIRS="etc rules logs stats queue"
@@ -37,6 +38,14 @@ chmod g+rw ${DATA_PATH}/process_list
 #
 AUTO_ENROLLMENT_ENABLED=${AUTO_ENROLLMENT_ENABLED:-true}
 
+function fix_access_to_random() {
+	pushd "${DATA_PATH}"
+		if [ ! -d "dev" ]; then
+			mkdir "dev"
+			mount -o bind /dev dev/
+		fi 
+	popd
+}
 
 function ossec_shutdown(){
   /var/ossec/bin/ossec-control stop;
@@ -48,6 +57,8 @@ function ossec_shutdown(){
 
 # Trap exit signals and do a proper shutdown
 trap "ossec_shutdown; exit" SIGINT SIGTERM
+
+fix_access_to_random
 
 #
 # Startup the services
