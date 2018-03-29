@@ -5,6 +5,7 @@ services:
     ports:
       - "1514:1514"
       - "1515:1515"
+      - "1516:1516"
     volumes:
       - ~/ossec-server-data:/etc/ossec/data
     container_name: "ossec-server"
