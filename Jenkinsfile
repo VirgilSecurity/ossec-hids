@@ -31,19 +31,13 @@ stage("Create Server Docker image"){
             docker.image("centos:7").inside("--user root"){
                 clearContentUnix()
             }
-            sh 'mkdir ossec-server-artifact'
-            dir('ossec-server-artifact'){
-                unstash "ossec-server-artifact"
-                // DEBUG
-                sh "ls -l ./artifact/bin"
-            }
+
+            unstash "ossec-server-artifact"
+            unstash "virgild-artifact"
             // DEBUG
             sh "ls -l"
-
-            sh "mkdir virgild-artifact"
-            dir("virgild-artifact"){
-                unstash "virgild-artifact"
-            }
+            sh "tree ./ossec-server-artifact"
+            sh "tree ./virgild-artifact"
 
             unstash "ossec-server-docker-files"
             unstash "ossec-ci-server"
