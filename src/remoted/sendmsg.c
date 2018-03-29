@@ -12,13 +12,13 @@
 #include "shared.h"
 #include "remoted.h"
 #include "os_net/os_net.h"
+#include <virgil-noisesocket.h>
 
 /* pthread send_msg mutex */
 static pthread_mutex_t sendmsg_mutex;
 
 /* pthread key update mutex */
 static pthread_mutex_t keyupdate_mutex;
-
 
 /* Initializes mutex */
 void keyupdate_init()
@@ -108,11 +108,17 @@ int send_msg(unsigned int agentid, const char *msg)
     }
 
     /* Send initial message */
-    dest_sa = (struct sockaddr *)&keys.keyentries[agentid]->peer_info;
-    sa_size = (dest_sa->sa_family == AF_INET) ?
-              sizeof(struct sockaddr_in) : sizeof(struct sockaddr_in6);
-    if (sendto(logr.sock, crypt_msg, msg_size, 0, dest_sa, sa_size) < 0) {
-        merror(SEND_ERROR, ARGV0, keys.keyentries[agentid]->id);
+    if (keys.keyentries[agentid]->client) {
+        if (VN_OK != vn_server_send(keys.keyentries[agentid]->client, crypt_msg, msg_size)) {
+            merror(SEND_ERROR, ARGV0, keys.keyentries[agentid]->id);
+        }
+    } else {
+        dest_sa = (struct sockaddr *) &keys.keyentries[agentid]->peer_info;
+        sa_size = (dest_sa->sa_family == AF_INET) ?
+                sizeof (struct sockaddr_in) : sizeof (struct sockaddr_in6);
+        if (sendto(logr.sock, crypt_msg, msg_size, 0, dest_sa, sa_size) < 0) {
+            merror(SEND_ERROR, ARGV0, keys.keyentries[agentid]->id);
+        }
     }
 
     /* Unlock mutex */

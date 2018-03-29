@@ -214,7 +214,7 @@ int Read_Remote(XML_NODE node, void *d1, __attribute__((unused)) void *d2)
     }
     
     /* Noisesocket connections only run on TCP */
-    if ((logr->conn[pl] == SECURE_CONN) && (logr->proto[pl] == IPPROTO_UDP)) {
+    if ((logr->conn[pl] == NOISES_CONN) && (logr->proto[pl] != IPPROTO_TCP)) {
         logr->proto[pl] = IPPROTO_TCP;
     }
 

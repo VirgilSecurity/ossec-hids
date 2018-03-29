@@ -241,6 +241,10 @@
 /* Syslog output */
 #define XML_INV_CSYSLOG "%s(5301): ERROR: Invalid client-syslog configuration."
 
+/* Noisesocket  output */
+#define NOISE_START_SERVER "%s(5401) INFO: Start Noisesocket server."
+#define NOISE_IS_NOT_ENABLED "%s(5402): ERROR: Noisesocket is not enabled during build."
+
 /* Agentless */
 #define XML_INV_AGENTLESS   "%s(7101): ERROR: Invalid agentless configuration."
 #define XML_INV_MISSFREQ    "%s(7102): ERROR: Frequency not set for the periodic option."

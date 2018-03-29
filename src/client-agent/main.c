@@ -24,9 +24,10 @@ static void help_agentd(void) __attribute((noreturn));
 static void help_agentd()
 {
     print_header();
-    print_out("  %s: -[Vhdtf] [-u user] [-g group] [-c config] [-D dir]", ARGV0);
+    print_out("  %s: -[NVhdtf] [-u user] [-g group] [-c config] [-D dir]", ARGV0);
     print_out("    -V          Version and license message");
     print_out("    -h          This help message");
+    print_out("    -N          Use Noisesocket");
     print_out("    -d          Execute in debug mode. This parameter");
     print_out("                can be specified multiple times");
     print_out("                to increase the debug level.");
@@ -45,6 +46,7 @@ int main(int argc, char **argv)
     int c = 0;
     int test_config = 0;
     int debug_level = 0;
+    int use_noisesocket = 0;
 
     const char *dir = DEFAULTDIR;
     const char *user = USER;
@@ -59,8 +61,11 @@ int main(int argc, char **argv)
     /* Set the name */
     OS_SetName(ARGV0);
 
-    while ((c = getopt(argc, argv, "Vtdfhu:g:D:c:")) != -1) {
+    while ((c = getopt(argc, argv, "NVtdfhu:g:D:c:")) != -1) {
         switch (c) {
+            case 'N':
+                use_noisesocket = 1;
+                break;
             case 'V':
                 print_version();
                 break;
@@ -169,7 +174,7 @@ int main(int argc, char **argv)
     StartSIG(ARGV0);
 
     /* Agentd Start */
-    AgentdStart(dir, uid, gid, user, group);
+    AgentdStart(dir, uid, gid, user, group, use_noisesocket);
 
     return (0);
 }

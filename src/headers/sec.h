@@ -11,6 +11,7 @@
 #define __SEC_H
 
 #include <time.h>
+#include <virgil-noisesocket.h>
 
 /* Unique key for each agent */
 typedef struct _keyentry {
@@ -25,6 +26,7 @@ typedef struct _keyentry {
 
     os_ip *ip;
     struct sockaddr_storage peer_info;
+    vn_serverside_client_t *client;
     FILE *fp;
 } keyentry;
 

@@ -17,6 +17,8 @@
 static time_t g_saved_time = 0;
 static char *rand_keepalive_str2(char *dst, int size);
 
+int send_msg_noise(vn_client_t *client, const char *msg);
+
 static char *rand_keepalive_str2(char *dst, int size)
 {
     static const char text[] = "abcdefghijklmnopqrstuvwxyz"
@@ -130,6 +132,69 @@ void run_notify()
 
     /* Send status message */
     send_msg(0, tmp_msg);
+
+    free(uname);
+    free(shared_files);
+
+    return;
+}
+
+void run_notify_noise(vn_client_t *client)
+{
+    char keep_alive_random[1024];
+    char tmp_msg[OS_SIZE_1024 + 1];
+    char *uname;
+    char *shared_files;
+    os_md5 md5sum;
+    time_t curr_time;
+
+    keep_alive_random[0] = '\0';
+    curr_time = time(0);
+
+    /* Check if time has elapsed */
+    if ((curr_time - g_saved_time) < agt->notify_time) {
+        return;
+    }
+    g_saved_time = curr_time;
+
+    debug1("%s: DEBUG: Sending agent notification.", ARGV0);
+
+    /* Send the message
+     * Message is going to be the uname\n checksum file\n checksum file\n
+     */
+
+    /* Get uname */
+    uname = getuname();
+    if (!uname) {
+        merror(MEM_ERROR, ARGV0, errno, strerror(errno));
+        return;
+    }
+
+    /* Get shared files */
+    shared_files = getsharedfiles();
+    if (!shared_files) {
+        shared_files = strdup("\0");
+        if (!shared_files) {
+            free(uname);
+            merror(MEM_ERROR, ARGV0, errno, strerror(errno));
+            return;
+        }
+    }
+
+    rand_keepalive_str2(keep_alive_random, 700);
+
+    /* Create message */
+    if ((File_DateofChange(AGENTCONFIGINT) > 0 ) &&
+            (OS_MD5_File(AGENTCONFIGINT, md5sum, OS_TEXT) == 0)) {
+        snprintf(tmp_msg, OS_SIZE_1024, "#!-%s / %s\n%s\n%s",
+                 uname, md5sum, shared_files, keep_alive_random);
+    } else {
+        snprintf(tmp_msg, OS_SIZE_1024, "#!-%s\n%s\n%s",
+                 uname, shared_files, keep_alive_random);
+    }
+
+    /* Send status message */
+    send_msg_noise(client, tmp_msg);
 
     free(uname);
     free(shared_files);

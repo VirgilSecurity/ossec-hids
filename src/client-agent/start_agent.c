@@ -11,6 +11,11 @@
 #include "agentd.h"
 #include "os_net/os_net.h"
 
+#ifdef NOISESOCKET_ENABLED
+#include <uv.h> // TODO: Move to Noisesocket header
+#include <virgil-noisesocket.h>
+#endif
+
 
 /* Attempt to connect to all configured servers */
 int connect_server(int initial_id)
@@ -85,6 +90,40 @@ int connect_server(int initial_id)
 
     return (0);
 }
+
+#ifdef NOISESOCKET_ENABLED
+
+/* Send a message to the server */
+int send_msg_noise(vn_client_t *client, const char *msg)
+{
+    size_t msg_size;
+    char crypt_msg[OS_MAXSTR + 1];
+
+    msg_size = CreateSecMSG(&keys, msg, crypt_msg, 0);
+    if (msg_size == 0) {
+        merror(SEC_ERROR, ARGV0);
+        return (-1);
+    }
+
+    /* Send msg_size of crypt_msg */
+    vn_client_send(client, crypt_msg, msg_size);
+
+    return (0);
+}
+
+/* Initialize handshake to server */
+void start_agent_send(vn_client_t *client, int is_startup)
+{
+    char msg[OS_MAXSTR + 2];
+    snprintf(msg, OS_MAXSTR, "%s%s", CONTROL_HEADER, HC_STARTUP);
+
+#ifdef ONEWAY_ENABLED
+    return;
+#endif
+
+    send_msg_noise(client, msg);
+}
+#endif
 
 /* Send synchronization message to the server and wait for the ack */
 void start_agent(int is_startup)

@@ -5,6 +5,7 @@
 # variables expected by this script.
 #
 FIRST_TIME_INSTALLATION=false
+BASE_PATH=/var/ossec
 DATA_PATH=/var/ossec/data
 
 DATA_DIRS="etc rules logs stats queue"
@@ -37,6 +38,14 @@ touch ${DATA_PATH}/process_list
 #
 AUTO_ENROLLMENT_ENABLED=${AUTO_ENROLLMENT_ENABLED:-true}
 
+function fix_access_to_random() {
+	pushd "${DATA_PATH}"
+		if [ ! -d "dev" ]; then
+			mkdir "dev"
+			mount -o bind /dev dev/
+		fi 
+	popd
+}
 
 function ossec_shutdown(){
   /var/ossec/bin/ossec-control stop;
@@ -49,6 +58,8 @@ function ossec_shutdown(){
 # Trap exit signals and do a proper shutdown
 trap "ossec_shutdown; exit" SIGINT SIGTERM
 
+fix_access_to_random
+
 #
 # Startup the services
 #
@@ -56,7 +67,7 @@ chmod -R g+rw ${DATA_PATH}/logs/ ${DATA_PATH}/stats/ ${DATA_PATH}/queue/
 
 if [ $AUTO_ENROLLMENT_ENABLED == true ]; then
   echo "Starting ossec-authd..."
-  /var/ossec/bin/ossec-authd -p 1515 -g ossec $AUTHD_OPTIONS >/dev/null 2>&1 &
+  /var/ossec/bin/ossec-authd -N -d -d -d -p 1516 -g ossec $AUTHD_OPTIONS >/dev/null 2>&1 &
   AUTHD_PID=$!
 fi
 sleep 15 # give ossec a reasonable amount of time to start before checking status
