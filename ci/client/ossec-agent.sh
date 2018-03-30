@@ -26,7 +26,7 @@ fix_access_to_random
 # Start services
 /var/ossec/bin/agent-auth -N -d -d -d -p 1516 -m OssecServ
 sleep 10
-/etc/init.d/ossec start
+/var/ossec/bin/ossec-control start
 
 # Return startup events to console
 tail -f /var/ossec/logs/ossec.log
