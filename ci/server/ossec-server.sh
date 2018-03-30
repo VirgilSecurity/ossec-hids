@@ -91,7 +91,7 @@ if [ $AUTO_ENROLLMENT_ENABLED == true ]; then
   /var/ossec/bin/ossec-authd -N -d -d -d -p 1516 $AUTHD_OPTIONS &
   AUTHD_PID=$!
 fi
-sleep 15 # give ossec a reasonable amount of time to start before checking status
+sleep 30 # give ossec a reasonable amount of time to start before checking status
 LAST_OK_DATE=`date +%s`
 
 # Add a dummy agent so remoted can start
