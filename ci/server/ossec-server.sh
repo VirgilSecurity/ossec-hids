@@ -86,9 +86,9 @@ sleep 15 # give ossec a reasonable amount of time to start before checking statu
 LAST_OK_DATE=`date +%s`
 
 # Add a dummy agent so remoted can start
-if [ ! -s /var/ossec/etc/client.keys ] ; then
-	/var/ossec/bin/manage_agents -f /var/ossec/default_agent
-fi
+# if [ ! -s /var/ossec/etc/client.keys ] ; then
+# 	/var/ossec/bin/manage_agents -f /var/ossec/default_agent
+# fi
 
 # Start OSSEC services
 /var/ossec/bin/ossec-control start
