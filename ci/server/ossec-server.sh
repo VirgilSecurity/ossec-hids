@@ -63,6 +63,14 @@ fix_access_to_random
 #
 # Startup the services
 #
+
+# Start Postfix
+/usr/sbin/postfix start
+
+# Start VirgilD
+/opt/virgild -mode=local -db=sqlite3:/var/ossec/data/virgild.db
+
+# Allow agents registration ???
 chmod -R g+rw ${DATA_PATH}/logs/ ${DATA_PATH}/stats/ ${DATA_PATH}/queue/ 
 
 if [ $AUTO_ENROLLMENT_ENABLED == true ]; then
@@ -78,9 +86,7 @@ if [ ! -s /var/ossec/etc/client.keys ] ; then
 	/var/ossec/bin/manage_agents -f /var/ossec/default_agent
 fi
 
-# Start services
-/usr/sbin/postfix start
-/opt/virgild -mode=local -db=sqlite3:/var/ossec/data/virgild.db
+# Start OSSEC services
 /var/ossec/bin/ossec-control start
 
 # Return startup events to console
