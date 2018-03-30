@@ -18,13 +18,6 @@ for ossecdir in $DATA_DIRS; do
   	fi
 done
 
-
-# TODO: Remove it !
-if [ ! -f ${DATA_PATH}/etc/sslmanager.key ]; then
-	openssl genrsa -out ${DATA_PATH}/etc/sslmanager.key 4096
-	openssl req -new -x509 -key ${DATA_PATH}/etc/sslmanager.key -out ${DATA_PATH}/etc/sslmanager.cert -days 3650 -subj /CN=${HOSTNAME}/
-fi
-
 #
 # Check for the process_list file. If this file is missing, it doesn't
 # count as a first time installation
@@ -66,9 +59,11 @@ trap "ossec_shutdown; exit" SIGINT SIGTERM
 mkdir /var/ossec/var
 mkdir /var/ossec/var/run
 mkdir /var/ossec/queue
+mkdir /var/ossec/queue/fts
+mkdir /var/ossec/queue/ossec
 
 # Own by ossec
-tree -fai /var/ossec | xargs -L1 -I{} chown ossec:ossec {}
+tree -fai /var/ossec | xargs -L1 -I{} chown ossec:ossec {} 2>/dev/null
 
 fix_access_to_random
 
