@@ -2,7 +2,7 @@ FROM centos:latest
 MAINTAINER Support <support@atomicorp.com>
 
 RUN yum -y update
-RUN yum -y install wget useradd postfix openssl libsodium libuv-static libcurl zlib bzip2 && yum clean all
+RUN yum -y install wget useradd postfix openssl libsodium libuv libcurl zlib bzip2 && yum clean all
 
 # copy compiled artifact
 ADD ossec-server-artifact/* /var/ossec/
