@@ -19,6 +19,7 @@ for ossecdir in $DATA_DIRS; do
 done
 
 
+# TODO: Remove it !
 if [ ! -f ${DATA_PATH}/etc/sslmanager.key ]; then
 	openssl genrsa -out ${DATA_PATH}/etc/sslmanager.key 4096
 	openssl req -new -x509 -key ${DATA_PATH}/etc/sslmanager.key -out ${DATA_PATH}/etc/sslmanager.cert -days 3650 -subj /CN=${HOSTNAME}/
@@ -68,14 +69,14 @@ fix_access_to_random
 /usr/sbin/postfix start
 
 # Start VirgilD
-/opt/virgild -mode=local -db=sqlite3:/var/ossec/data/virgild.db
+/opt/virgild -mode=local -db=sqlite3:/var/ossec/data/virgild.db &
 
 # Allow agents registration ???
 chmod -R g+rw ${DATA_PATH}/logs/ ${DATA_PATH}/stats/ ${DATA_PATH}/queue/ 
 
 if [ $AUTO_ENROLLMENT_ENABLED == true ]; then
   echo "Starting ossec-authd..."
-  /var/ossec/bin/ossec-authd -N -d -d -d -p 1516 -g ossec $AUTHD_OPTIONS >/dev/null 2>&1 &
+  /var/ossec/bin/ossec-authd -N -d -d -d -p 1516 $AUTHD_OPTIONS >/dev/null 2>&1 &
   AUTHD_PID=$!
 fi
 sleep 15 # give ossec a reasonable amount of time to start before checking status
