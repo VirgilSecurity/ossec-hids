@@ -6,6 +6,9 @@ RUN yum -y update
 RUN yum -y install wget libsodium libuv libcurl zlib bzip2
 RUN yum clean all
 
+# Create OSSEC user
+RUN useradd -Ums /bin/bash ossec
+
 # copy compiled artifact
 ADD ossec-agent-artifact/* /var/ossec/
 

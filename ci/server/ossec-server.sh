@@ -79,7 +79,7 @@ chmod -R g+rw ${DATA_PATH}/logs/ ${DATA_PATH}/stats/ ${DATA_PATH}/queue/
 
 if [ $AUTO_ENROLLMENT_ENABLED == true ]; then
   echo "Starting ossec-authd..."
-  /var/ossec/bin/ossec-authd -N -d -d -d -p 1516 $AUTHD_OPTIONS >/dev/null 2>&1 &
+  /var/ossec/bin/ossec-authd -N -d -d -d -p 1516 $AUTHD_OPTIONS &
   AUTHD_PID=$!
 fi
 sleep 15 # give ossec a reasonable amount of time to start before checking status
