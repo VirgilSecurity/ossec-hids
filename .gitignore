@@ -6,6 +6,7 @@
 *.dll
 *.exe
 *.dat
+ossec-server-data/*
 
 # Auto generated build files
 src/LOCATION
