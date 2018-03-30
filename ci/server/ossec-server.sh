@@ -18,7 +18,6 @@ for ossecdir in $DATA_DIRS; do
   	fi
 done
 
-echo "SERVER >>> 1"
 
 # TODO: Remove it !
 if [ ! -f ${DATA_PATH}/etc/sslmanager.key ]; then
@@ -26,8 +25,6 @@ if [ ! -f ${DATA_PATH}/etc/sslmanager.key ]; then
 	openssl req -new -x509 -key ${DATA_PATH}/etc/sslmanager.key -out ${DATA_PATH}/etc/sslmanager.cert -days 3650 -subj /CN=${HOSTNAME}/
 fi
 
-
-echo "SERVER >>> 2"
 #
 # Check for the process_list file. If this file is missing, it doesn't
 # count as a first time installation
