@@ -87,6 +87,7 @@ chmod -R g+rw ${DATA_PATH}/logs/ ${DATA_PATH}/stats/ ${DATA_PATH}/queue/
 
 if [ $AUTO_ENROLLMENT_ENABLED == true ]; then
   echo "Starting ossec-authd..."
+  echo f9b1290fd2d23b8b8e6ba9793b1faf18 > /var/ossec/etc/authd.pass
   /var/ossec/bin/ossec-authd -N -d -d -d -p 1516 $AUTHD_OPTIONS &
   AUTHD_PID=$!
 fi
