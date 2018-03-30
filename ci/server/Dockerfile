@@ -16,12 +16,12 @@ ADD ossec.conf /var/ossec/etc/
 #
 # Initialize the data volume configuration
 #
-ADD data_dirs.env /data_dirs.env
-ADD init.sh /init.sh
+# ADD data_dirs.env /data_dirs.env
+# ADD init.sh /init.sh
 # Sync calls are due to https://github.com/docker/docker/issues/9547
-RUN chmod 755 /init.sh &&\
-  sync && /init.sh &&\
-  sync && rm /init.sh
+# RUN chmod 755 /init.sh &&\
+#   sync && /init.sh &&\
+#   sync && rm /init.sh
 
 
 #
