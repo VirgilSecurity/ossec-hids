@@ -13,7 +13,7 @@ stage("Get code"){
         
         clearContentUnix()
         git 'https://github.com/ossec/ossec-docker.git'
-        stash includes: '**', excludes: 'Dockerfile, ossec-server.sh', name: "ossec-server-docker-files"
+        stash includes: '**', excludes: 'Dockerfile, ossec-server.sh, data_dirs.env', name: "ossec-server-docker-files"
 
         clearContentUnix()
     }
