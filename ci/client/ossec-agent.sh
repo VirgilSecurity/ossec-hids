@@ -23,6 +23,14 @@ function fix_access_to_random() {
 # Trap exit signals and do a proper shutdown
 trap "ossec_shutdown; exit" SIGINT SIGTERM
 
+# Create required directories
+mkdir /var/ossec/var
+mkdir /var/ossec/var/run
+mkdir /var/ossec/queue
+
+# Own by ossec
+tree -fai /var/ossec | xargs -L1 -I{} chown ossec:ossec {}
+
 fix_access_to_random
 
 # Start services
