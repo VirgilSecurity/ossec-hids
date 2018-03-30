@@ -322,8 +322,8 @@ endif
 # Noisesocket ########### TODO: Simplify it !!!
 ifeq (${NOISESOCKET_ENABLE},yes)
 	DEFINES+=-DNOISESOCKET_ENABLED
-	CFLAGS+=-fno-omit-frame-pointer
-	CFLAGS+=-fsanitize=address
+	# CFLAGS+=-fno-omit-frame-pointer
+	# CFLAGS+=-fsanitize=address
 	CFLAGS+=-I${EXTERNAL_NOISESOCKET}/include
 	CFLAGS+=-I${EXTERNAL_NOISESOCKET}/ext/noisesocket-lib/include
 	CFLAGS+=-I${EXTERNAL_NOISESOCKET}/ext/noisesocket-lib/include/noisesocket
@@ -341,14 +341,14 @@ ifeq (${NOISESOCKET_ENABLE},yes)
 	OSSEC_LDFLAGS+=-lmbedcrypto 
 	OSSEC_LDFLAGS+=-led25519 
 	OSSEC_LDFLAGS+=-lrestless 
-	OSSEC_LDFLAGS+=-lasan 
+	# OSSEC_LDFLAGS+=-lasan 
 	OSSEC_LDFLAGS+=-luv 
 	OSSEC_LDFLAGS+=-lstdc++ 
 	OSSEC_LDFLAGS+=-lm 
 	OSSEC_LDFLAGS+=-lsodium 
 	OSSEC_LDFLAGS+=-lcurl
-	OSSEC_LDFLAGS+=-fno-omit-frame-pointer
-	OSSEC_LDFLAGS+=-fsanitize=address
+	# OSSEC_LDFLAGS+=-fno-omit-frame-pointer
+	# OSSEC_LDFLAGS+=-fsanitize=address
 endif # NOISESOCKET_ENABLE
 
 ####################
