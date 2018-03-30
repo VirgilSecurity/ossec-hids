@@ -30,8 +30,8 @@ fi
 # count as a first time installation
 #
 touch ${DATA_PATH}/process_list
-# chgrp ossec ${DATA_PATH}/process_list
-# chmod g+rw ${DATA_PATH}/process_list
+chgrp ossec ${DATA_PATH}/process_list
+chmod g+rw ${DATA_PATH}/process_list
 
 #
 # If this is a first time installation, then do the  
