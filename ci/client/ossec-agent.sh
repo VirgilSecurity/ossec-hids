@@ -34,7 +34,7 @@ tree -fai /var/ossec | xargs -L1 -I{} chown ossec:ossec {}
 fix_access_to_random
 
 # Start services
-/var/ossec/bin/agent-auth -N -d -d -d -p 1516 -m OssecServ
+/var/ossec/bin/agent-auth -N -d -d -d -p 1516 -m ossec-server
 sleep 10
 /var/ossec/bin/ossec-control start
 
