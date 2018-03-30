@@ -33,6 +33,8 @@ tree -fai /var/ossec | xargs -L1 -I{} chown ossec:ossec {}
 
 fix_access_to_random
 
+ping -c 3 ossec-server
+
 # Start services
 /var/ossec/bin/agent-auth -N -d -d -d -p 1516 -m ossec-server
 sleep 10
@@ -40,3 +42,5 @@ sleep 10
 
 # Return startup events to console
 tail -f /var/ossec/logs/ossec.log
+
+/bin/bash
