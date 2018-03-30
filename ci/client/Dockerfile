@@ -3,7 +3,7 @@ MAINTAINER Support <support@atomicorp.com>
 
 RUN yum install -y epel-release
 RUN yum -y update
-RUN yum -y install wget libsodium libuv-static libcurl zlib bzip2
+RUN yum -y install wget libsodium libuv libcurl zlib bzip2
 RUN yum clean all
 
 # copy compiled artifact
