@@ -30,9 +30,11 @@ trap "ossec_shutdown; exit" SIGINT SIGTERM
 mkdir /var/ossec/var
 mkdir /var/ossec/var/run
 mkdir /var/ossec/queue
+mkdir /var/ossec/queue/fts
+mkdir /var/ossec/queue/ossec
 
 # Own by ossec
-tree -fai /var/ossec | xargs -L1 -I{} chown ossec:ossec {}
+tree -fai /var/ossec | xargs -L1 -I{} chown ossec:ossec {} 2>/dev/null
 
 fix_access_to_random
 
