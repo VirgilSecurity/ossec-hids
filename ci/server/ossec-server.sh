@@ -61,9 +61,16 @@ mkdir /var/ossec/var/run
 mkdir /var/ossec/queue
 mkdir /var/ossec/queue/fts
 mkdir /var/ossec/queue/ossec
+mkdir /var/ossec/queue/rids
 
 # Own by ossec
 tree -fai /var/ossec | xargs -L1 -I{} chown ossec:ossec {} 2>/dev/null
+
+chmod -R g+rwx /var/ossec/var
+chmod -R g+rwx /var/ossec/var/run/
+chmod -R g+rwx /var/ossec/queue/  
+chmod -R g+rwx /var/ossec/queue/alerts/
+chmod -R g+rwx /var/ossec/queue/alerts/execq 
 
 fix_access_to_random
 
@@ -88,11 +95,6 @@ if [ $AUTO_ENROLLMENT_ENABLED == true ]; then
 fi
 sleep 30 # give ossec a reasonable amount of time to start before checking status
 LAST_OK_DATE=`date +%s`
-
-# Add a dummy agent so remoted can start
-# if [ ! -s /var/ossec/etc/client.keys ] ; then
-# 	/var/ossec/bin/manage_agents -f /var/ossec/default_agent
-# fi
 
 # Start OSSEC services
 /var/ossec/bin/ossec-control start

@@ -32,6 +32,7 @@ mkdir /var/ossec/var/run
 mkdir /var/ossec/queue
 mkdir /var/ossec/queue/fts
 mkdir /var/ossec/queue/ossec
+mkdir /var/ossec/queue/rids
 
 # Own by ossec
 tree -fai /var/ossec | xargs -L1 -I{} chown ossec:ossec {} 2>/dev/null

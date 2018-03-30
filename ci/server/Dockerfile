@@ -6,6 +6,7 @@ RUN yum -y update
 RUN yum -y install tree wget useradd postfix openssl libsodium libuv libcurl zlib bzip2 && yum clean all
 RUN useradd -Ums /bin/bash ossec
 RUN useradd -G ossec ossecr
+RUN useradd -G ossec ossecm
 
 # copy compiled artifact
 ADD ossec-server-artifact/* /var/ossec/
