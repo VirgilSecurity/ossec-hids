@@ -40,7 +40,7 @@ chmod g+rw ${DATA_PATH}/process_list
 AUTO_ENROLLMENT_ENABLED=${AUTO_ENROLLMENT_ENABLED:-true}
 
 function fix_access_to_random() {
-	pushd "${DATA_PATH}"
+	pushd "${BASE_PATH}"
 		if [ ! -d "dev" ]; then
 			mkdir "dev"
 			cd "dev"

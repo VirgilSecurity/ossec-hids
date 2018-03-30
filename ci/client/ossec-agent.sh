@@ -5,14 +5,17 @@
 # variables expected by this script.
 #
 
+BASE_PATH=/var/ossec
+
 function ossec_shutdown(){
   /var/ossec/bin/ossec-control stop;
 }
 
 function fix_access_to_random() {
-	pushd "${DATA_PATH}"
+	pushd "${BASE_PATH}"
 		if [ ! -d "dev" ]; then
 			mkdir "dev"
+			cd "dev"
 			ln -s /dev/urandom ./
 			ln -s /dev/random ./
 			ln -s /dev/zero ./
@@ -33,10 +36,13 @@ tree -fai /var/ossec | xargs -L1 -I{} chown ossec:ossec {}
 
 fix_access_to_random
 
+export OSSEC_SERVER_IP=$(nslookup ossec-server | grep Address | sed -n 2p | awk '{$1=""; print $0}')
+
+echo "OSSEC_SERVER_IP=${OSSEC_SERVER_IP}"
 ping -c 3 ossec-server
 
 # Start services
-/var/ossec/bin/agent-auth -N -d -d -d -p 1516 -m ossec-server
+/var/ossec/bin/agent-auth -N -d -d -d -p 1516 -m ${OSSEC_SERVER_IP}
 sleep 10
 /var/ossec/bin/ossec-control start
 
