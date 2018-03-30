@@ -58,19 +58,25 @@ trap "ossec_shutdown; exit" SIGINT SIGTERM
 # Create required directories
 mkdir /var/ossec/var
 mkdir /var/ossec/var/run
+mkdir /var/ossec/var/log
 mkdir /var/ossec/queue
 mkdir /var/ossec/queue/fts
 mkdir /var/ossec/queue/ossec
 mkdir /var/ossec/queue/rids
+mkdir /var/ossec/queue/agent-info
+mkdir -p /var/ossec/queue/alerts
 mkdir -p /var/ossec/logs/archives
 mkdir -p /var/ossec/logs/alerts
 mkdir -p /var/ossec/logs/firewall
+mkdir -p /var/ossec/queue/syscheck
+
 
 # Own by ossec
 tree -fai /var/ossec | xargs -L1 -I{} chown ossec:ossec {} 2>/dev/null
 
 chmod -R g+rwx /var/ossec/var
 chmod -R g+rwx /var/ossec/var/run/
+chmod -R g+rwx /var/ossec/var/log
 chmod -R g+rwx /var/ossec/queue/  
 chmod -R g+rwx /var/ossec/queue/alerts/
 chmod -R g+rwx /var/ossec/queue/alerts/execq 
@@ -78,6 +84,9 @@ chmod -R g+rwx /var/ossec/logs/archives
 chmod -R g+rwx /var/ossec/logs/alerts
 chmod -R g+rwx /var/ossec/logs/firewall
 chmod -R g+rwx /var/ossec/queue/rids
+chmod -R g+rwx /var/ossec/queue/alerts
+chmod -R g+rwx /var/ossec/queue/syscheck
+chmod -R g+rwx mkdir /var/ossec/queue/agent-info
 
 fix_access_to_random
 
