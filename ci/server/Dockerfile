@@ -3,8 +3,8 @@ MAINTAINER Support <support@atomicorp.com>
 
 RUN yum install -y epel-release
 RUN yum -y update
+RUN yum -y install wget useradd postfix openssl libsodium libuv libcurl zlib bzip2 && yum clean all
 RUN useradd -Ums /bin/bash ossec
-RUN yum -y install strace wget useradd postfix openssl libsodium libuv libcurl zlib bzip2 && yum clean all
 
 # copy compiled artifact
 ADD ossec-server-artifact/* /var/ossec/
