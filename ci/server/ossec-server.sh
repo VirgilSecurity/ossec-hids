@@ -43,7 +43,10 @@ function fix_access_to_random() {
 	pushd "${DATA_PATH}"
 		if [ ! -d "dev" ]; then
 			mkdir "dev"
-			mount -o bind /dev dev/
+			cd "dev"
+			ln -s /dev/urandom ./
+			ln -s /dev/random ./
+			ln -s /dev/zero ./
 		fi 
 	popd
 }
