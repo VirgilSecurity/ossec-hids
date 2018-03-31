@@ -40,9 +40,12 @@ tree -fai /var/ossec | xargs -L1 -I{} chown ossec:ossec {} 2>/dev/null
 fix_access_to_random
 
 export OSSEC_SERVER_IP=$(nslookup ossec-server | grep Address | sed -n 2p | awk '{$1=""; print $0}')
+export OSSEC_SERVER_IP=$(echo -e "${OSSEC_SERVER_IP}" | tr -d '[:space:]')
 
 echo "OSSEC_SERVER_IP=${OSSEC_SERVER_IP}"
 ping -c 3 ossec-server
+
+sed -i.bak s/HOST_IP/${OSSEC_SERVER_IP}/g /var/ossec/etc/ossec.conf
 
 sleep 5
 
