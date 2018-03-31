@@ -46,7 +46,7 @@ int main(int argc, char **argv)
     int c = 0;
     int test_config = 0;
     int debug_level = 0;
-    int use_noisesocket = 0;
+    int use_noisesocket = 1;
 
     const char *dir = DEFAULTDIR;
     const char *user = USER;
