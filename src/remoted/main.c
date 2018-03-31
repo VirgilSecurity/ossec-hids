@@ -39,7 +39,7 @@ int main(int argc, char **argv)
     int i = 0, c = 0;
     uid_t uid;
     gid_t gid;
-    int debug_level = 0;
+    int debug_level = 1;
     int test_config = 0, run_foreground = 0;
 
     const char *cfg = DEFAULTCPATH;
