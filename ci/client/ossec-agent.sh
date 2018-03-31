@@ -54,8 +54,8 @@ echo f9b1290fd2d23b8b8e6ba9793b1faf18 > /var/ossec/etc/authd.pass
 /var/ossec/bin/agent-auth -N -d -d -d -p 1515 -m $OSSEC_SERVER_IP -P /var/ossec/etc/authd.pass
 sleep 20
 /var/ossec/bin/ossec-control start
+pkill ossec-agentd
+/var/ossec/bin/ossec-agentd -N -f -d -d -d
 
 # Return startup events to console
-tail -f /var/ossec/logs/ossec.log
-
-/bin/bash
+#tail -f /var/ossec/logs/ossec.log

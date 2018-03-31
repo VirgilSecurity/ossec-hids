@@ -109,11 +109,13 @@ if [ $AUTO_ENROLLMENT_ENABLED == true ]; then
   /var/ossec/bin/ossec-authd -N -d -d -d -p 1515 $AUTHD_OPTIONS &
   AUTHD_PID=$!
 fi
-sleep 15 # give ossec a reasonable amount of time to start before checking status
+sleep 10 # give ossec a reasonable amount of time to start before checking status
 LAST_OK_DATE=`date +%s`
 
 # Start OSSEC services
 /var/ossec/bin/ossec-control start
+pkill ossec-remoted
+/var/ossec/bin/ossec-remoted -f -d -d -d
 
 # Return startup events to console
-tail -f /var/ossec/logs/ossec.log
+#tail -f /var/ossec/logs/ossec.log
