@@ -118,4 +118,4 @@ pkill ossec-remoted
 /var/ossec/bin/ossec-remoted -f -d -d -d
 
 # Return startup events to console
-#tail -f /var/ossec/logs/ossec.log
+tail -f /var/ossec/logs/ossec.log
