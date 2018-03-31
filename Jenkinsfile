@@ -122,6 +122,8 @@ def createOssecClientBuild(slave){
                 sh "sed -i\'\' -e 's/#USER_AGENT_SERVER_NAME=\"ossec-server\"/USER_AGENT_SERVER_NAME=\"ossec-server\"/g' etc/preloaded-vars.conf"
                 sh "sed -i\'\' -e 's/#USER_AGENT_CONFIG_PROFILE=\"generic\"/USER_AGENT_CONFIG_PROFILE=\"generic\"/g' etc/preloaded-vars.conf"
 
+                sh "rm -rf src/external/noisesocket/.depends_cache/"
+                sh "rm -rf src/external/noisesocket/.depends_cache/"
                 useV4DevToolSet("./install.sh")
                 sh "mkdir artifact"
                 sh "cp -r /var/ossec/* ./artifact/"
