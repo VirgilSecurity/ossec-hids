@@ -6,7 +6,7 @@ LAUNCH_SCRIPT="${SCRIPT_FOLDER}/start.scpt"
 if [ $# -le 1 ]; then
     if [ $# -ne 0 ]; then
         case $1 in
-            "signle")
+            "single")
                 osascript "${SCRIPT_FOLDER}/start_single.scpt"
                 ;;
             "full")
