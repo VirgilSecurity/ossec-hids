@@ -64,6 +64,8 @@ mkdir /var/ossec/queue/fts
 mkdir /var/ossec/queue/ossec
 mkdir /var/ossec/queue/rids
 mkdir /var/ossec/queue/agent-info
+mkdir /var/ossec/queue/rootcheck
+mkdir -p /var/ossec/stats/totals
 mkdir -p /var/ossec/queue/alerts
 mkdir -p /var/ossec/logs/archives
 mkdir -p /var/ossec/logs/alerts
@@ -86,6 +88,8 @@ chmod -R g+rwx /var/ossec/logs/firewall
 chmod -R g+rwx /var/ossec/queue/rids
 chmod -R g+rwx /var/ossec/queue/alerts
 chmod -R g+rwx /var/ossec/queue/syscheck
+chmod -R g+rwx /var/ossec/queue/rootcheck
+chmod -R g+rwx /var/ossec/stats/totals
 chmod -R g+rwx mkdir /var/ossec/queue/agent-info
 
 fix_access_to_random
