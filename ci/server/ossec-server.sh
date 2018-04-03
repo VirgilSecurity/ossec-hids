@@ -116,6 +116,10 @@ fi
 sleep 10 # give ossec a reasonable amount of time to start before checking status
 LAST_OK_DATE=`date +%s`
 
+# Stop Authd and clean log
+pkill ossec-authd
+echo "" > /var/ossec/logs/ossec.log
+
 # Start OSSEC services
 /var/ossec/bin/ossec-control start
 pkill ossec-remoted
